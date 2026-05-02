@@ -4,6 +4,7 @@
 // Bibliotecas de Rede (Focadas no ESP8266/NodeMCU para este exemplo)
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
 #include <DNSServer.h>
 
 // Instâncias globais para o Servidor Web e DNS (mantidas fora do .h para não poluir os produtos finais)
@@ -103,12 +104,15 @@ bool ConfigManager::loadConfig() {
     }
 
     // Carrega credenciais de rede
-    if (doc.containsKey("wifi_ssid")) _wifiSSID = doc["wifi_ssid"].as<String>();
-    if (doc.containsKey("wifi_pass")) _wifiPassword = doc["wifi_pass"].as<String>();
+    if (doc["wifi_ssid"].is<String>()) 
+        _wifiSSID = doc["wifi_ssid"].as<String>();
+
+    if (doc["wifi_pass"].is<String>()) 
+        _wifiPassword = doc["wifi_pass"].as<String>();
 
     // Atualiza dinamicamente as variáveis lá no main.cpp do produto
     for (const auto& param : _parameters) {
-        if (doc.containsKey(param.id)) {
+        if (!doc["key"].isNull()) {
             switch (param.type) {
                 case ParamType::INT:    *(int*)param.valuePointer = doc[param.id].as<int>(); break;
                 case ParamType::FLOAT:  *(float*)param.valuePointer = doc[param.id].as<float>(); break;
@@ -144,12 +148,24 @@ void ConfigManager::startAP() {
     
     // Configura o DNS para redirecionar TODO o tráfego para o IP do NodeMCU (Captive Portal)
     dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+    
+    // Inicia mDNS para acesso via hostname amigável (ex: http://configmanager.local)
+    if (!MDNS.begin(_mdnsHostname.c_str())) {
+        Serial.println("[ConfigManager] Erro ao iniciar mDNS");
+    } else {
+        Serial.print("[ConfigManager] mDNS iniciado: http://");
+        Serial.print(_mdnsHostname);
+        Serial.println(".local");
+    }
 }
 
 void ConfigManager::setupCaptivePortal() {
+    // Permite requisições mDNS
+    MDNS.addService("http", "tcp", 80);
+    
     // Rota raiz (onde construiremos o HTML)
     server.on("/", []() {
-        server.send(200, "text/html", "<h1>Bem vindo as Configuracoes</h1><p>Em breve, geraremos o form aqui!</p>");
+        server.send(200, "text/html", "<h1>Bem vindo as Configuracoes</h1><p>Acesse via: <b>http://configmanager.local</b></p>");
     });
 
     // Rota para pegar os dados do formulário quando o usuário apertar "Salvar"
@@ -167,4 +183,10 @@ void ConfigManager::setupCaptivePortal() {
     });
 
     server.begin();
+}
+
+void ConfigManager::setMdnsHostname(const String& hostname) {
+    _mdnsHostname = hostname;
+    Serial.print("[ConfigManager] mDNS hostname definido para: ");
+    Serial.println(hostname);
 }

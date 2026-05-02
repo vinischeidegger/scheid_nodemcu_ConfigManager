@@ -41,7 +41,7 @@ lib_deps =
 
 ## 🚀 Quick Start
 
-Here is a minimal example of how to implement `ConfigManager` in a new product.
+Here is a minimal example of how to implement `ConfigManager` in a new product. (See `src/main.cpp` for a complete working example.)
 
 ```cpp
 #include <Arduino.h>
@@ -101,8 +101,8 @@ pio test -e nodemcuv2
 ```text
 ConfigManager/
 ├── include/                  # Header files (.h)
-├── src/                      # Implementation files (.cpp)
-├── examples/                 # Ready-to-compile examples for standard use cases
+├── src/                      # Implementation files (.cpp) and sample main.cpp
+├── examples/                 # Additional ready-to-compile examples for standard use cases
 ├── test/                     # Unit tests (native and embedded)
 ├── library.json              # PlatformIO library manifest and dependencies
 └── platformio.ini            # Used purely for developing and testing THIS library

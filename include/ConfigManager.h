@@ -65,6 +65,12 @@ public:
      */
     void resetNetwork();
 
+    /**
+     * @brief Define o hostname mDNS para acesso amigável (ex: "configmanager.local").
+     * @param hostname Nome sem ".local" (ex: "configure" resultará em "configure.local")
+     */
+    void setMdnsHostname(const String& hostname);
+
 private:
     std::vector<ConfigParameter> _parameters;
     String _apSSID;
@@ -73,6 +79,7 @@ private:
     // Configurações de Rede Internas
     String _wifiSSID;
     String _wifiPassword;
+    String _mdnsHostname = "configmanager";
 
     // Métodos Privados
     void setupCaptivePortal();
