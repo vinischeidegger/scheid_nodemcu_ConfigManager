@@ -26,9 +26,21 @@ struct ConfigParameter {
     String label;
 };
 
+/**
+ * @brief Options for constructing a ConfigManager instance.
+ */
+struct ConfigManagerOptions {
+    String apSSID = "Scheid Config";
+    String mdnsHostname = "configmanager";
+};
+
 class ConfigManager {
 public:
-    ConfigManager();
+    /**
+     * @brief Constructs a ConfigManager instance with named options.
+     * @param options Configuration options for the manager
+     */
+    ConfigManager(const ConfigManagerOptions& options = ConfigManagerOptions());
     
     /**
      * @brief Registers a parameter that will be managed by the portal and saved in memory.
@@ -79,7 +91,7 @@ private:
     // Internal Network Configuration
     String _wifiSSID;
     String _wifiPassword;
-    String _mdnsHostname = "configmanager";
+    String _mdnsHostname;
 
     // Private Methods
     void setupCaptivePortal();

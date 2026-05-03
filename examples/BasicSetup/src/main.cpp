@@ -4,17 +4,20 @@
 // ==========================================
 // 1. CONFIGURATION MODULE INSTANCE
 // ==========================================
-ConfigManager configManager;
+// Initialize with named option values for safer construction
+ConfigManagerOptions configOptions;
+configOptions.mdnsHostname = "pressure.config";
+ConfigManager configManager(configOptions);
 
 // ==========================================
 // 2. BUSINESS VARIABLES FOR THIS PRODUCT
 // ==========================================
 // These are the "factory" values. If there is anything already saved on the NodeMCU,
 // ConfigManager will automatically overwrite these values in setup.
-float setpointPressao = 3.5;       // Desired pressure in Bar
-unsigned long tempoLeituraMs = 2000;         // Time between sensor readings
-bool alarmeAtivo = true;           // Enable/Disable alarm
-String nomeEquipamento = "Bomba 1"; 
+float pressureSetpoint = 3.5;       // Desired pressure in Bar
+unsigned long readingTimeMs = 2000;         // Time between sensor readings
+bool isAlarmActive = true;           // Enable/Disable alarm
+String equipmentName = "Pump 1"; 
 
 // Variables for time control without blocking the processor
 unsigned long ultimoTempoLeitura = 0;
@@ -28,17 +31,10 @@ void setup() {
     // 3. PARAMETER REGISTRATION
     // ==========================================
     // Tell ConfigManager which variables it should manage and expose on the Captive Portal
-    configManager.registerParameter("sp_pressao", &setpointPressao, ParamType::FLOAT, "Setpoint (Bar)");
-    configManager.registerParameter("tempo_leitura", &tempoLeituraMs, ParamType::INT, "Tempo de Leitura (ms)");
-    configManager.registerParameter("alarme", &alarmeAtivo, ParamType::BOOL, "Ativar Alarme");
-    configManager.registerParameter("nome", &nomeEquipamento, ParamType::STRING, "Nome do Equipamento");
-
-    // ==========================================
-    // CONFIGURE mDNS HOSTNAME (OPTIONAL)
-    // ==========================================
-    // Defines a friendly hostname to access the portal. Default is "configmanager"
-    // You can change to "configure", "pump", etc.
-    configManager.setMdnsHostname("configure");
+    configManager.registerParameter("pressure_sp", &pressureSetpoint, ParamType::FLOAT, "Setpoint (Bar)");
+    configManager.registerParameter("reading_time", &readingTimeMs, ParamType::INT, "Time between readings (ms)");
+    configManager.registerParameter("alarm", &isAlarmActive, ParamType::BOOL, "Enable Alarm");
+    configManager.registerParameter("name", &equipmentName, ParamType::STRING, "Equipment Name");
 
     // ==========================================
     // 4. BASE SYSTEM INITIALIZATION
@@ -68,16 +64,16 @@ void loop() {
     unsigned long tempoAtual = millis();
 
     // Executes the sensor reading based on the time configured by the user
-    if (tempoAtual - ultimoTempoLeitura >= tempoLeituraMs) {
+    if (tempoAtual - ultimoTempoLeitura >= readingTimeMs) {
         ultimoTempoLeitura = tempoAtual;
 
         // Simulating the practical use of variables that Captive Portal manages:
         Serial.print("[");
-        Serial.print(nomeEquipamento);
+        Serial.print(equipmentName);
         Serial.print("] Current Setpoint: ");
-        Serial.print(setpointPressao);
+        Serial.print(pressureSetpoint);
         Serial.print(" Bar | Alarm: ");
-        Serial.println(alarmeAtivo ? "ON" : "OFF");
+        Serial.println(isAlarmActive ? "ON" : "OFF");
 
         /* Real logic would go here:
         float pressaoAtual = analogRead(PINO_SENSOR_PRESSAO) * FATOR_CONVERSAO;

@@ -13,12 +13,13 @@ DNSServer dnsServer;
 
 const byte DNS_PORT = 53;
 
-ConfigManager::ConfigManager() {
+ConfigManager::ConfigManager(const ConfigManagerOptions& options) {
     // Default factory settings
-    _apSSID = "Scheid Product Config"; 
+    _apSSID = options.apSSID;
     _apPassword = ""; // Open Network for Captive Portal
     _wifiSSID = "";
     _wifiPassword = "";
+    _mdnsHostname = options.mdnsHostname;
 }
 
 void ConfigManager::registerParameter(const String& id, void* valuePointer, ParamType type, const String& label) {
