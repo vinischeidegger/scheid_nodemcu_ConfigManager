@@ -55,3 +55,14 @@
 - Keep modifications consistent with PlatformIO/Arduino library expectations.
 - Preserve the library's responsibility: WiFi/captive-portal handling and persistent JSON configuration storage for ESP devices.
 - If no build artifacts or config files exist, do not assume a build pipeline exists in this checkout.
+
+## Code documentation requirements
+
+- **All code documentation must be in English.** This includes:
+  - Function/method documentation and comments
+  - Variable and constant descriptions
+  - Inline code explanations
+  - Class and namespace documentation
+  - README files, ARCHITECTURE documents, and all guides
+- Use clear, precise English without abbreviations unless standard in the industry.
+- Ensure documentation is comprehensive enough for external developers to understand the code.

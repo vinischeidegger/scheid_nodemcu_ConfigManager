@@ -7,7 +7,7 @@
 #include <vector>
 
 /**
- * @brief Tipos de dados suportados para os parâmetros de configuração.
+ * @brief Supported data types for configuration parameters.
  */
 enum class ParamType {
     INT,
@@ -17,7 +17,7 @@ enum class ParamType {
 };
 
 /**
- * @brief Estrutura interna para mapear variáveis do produto para o ConfigManager.
+ * @brief Internal structure to map product variables to ConfigManager.
  */
 struct ConfigParameter {
     String id;
@@ -31,43 +31,43 @@ public:
     ConfigManager();
     
     /**
-     * @brief Registra um parâmetro que será gerenciado pelo portal e salvo na memória.
-     * @param id Identificador único no JSON (ex: "setpoint_pressao")
-     * @param valuePointer Ponteiro para a variável no seu código principal
-     * @param type Tipo do dado (ParamType)
-     * @param label Nome amigável que aparecerá no formulário HTML do celular
+     * @brief Registers a parameter that will be managed by the portal and saved in memory.
+     * @param id Unique identifier in JSON (e.g., "setpoint_pressao")
+     * @param valuePointer Pointer to the variable in your main code
+     * @param type Data type (ParamType)
+     * @param label Friendly name that will appear on the mobile HTML form
      */
     void registerParameter(const String& id, void* valuePointer, ParamType type, const String& label);
 
     /**
-     * @brief Inicializa o sistema, monta o sistema de arquivos e tenta carregar configs.
-     * Se não conseguir conectar ao WiFi salvo, entra em modo Access Point automaticamente.
+     * @brief Initializes the system, mounts the file system, and attempts to load configuration.
+     * If unable to connect to saved WiFi, automatically enters Access Point mode.
      */
     bool begin();
 
     /**
-     * @brief Deve ser chamado dentro do loop() principal para manter o WebServer e DNS ativos.
+     * @brief Must be called within the main loop() to keep the WebServer and DNS active.
      */
     void handle();
 
     /**
-     * @brief Salva os valores atuais das variáveis registradas no sistema de arquivos (LittleFS).
+     * @brief Saves the current values of registered variables to the file system (LittleFS).
      */
     bool saveConfig();
 
     /**
-     * @brief Carrega os valores do arquivo JSON para as variáveis registradas.
+     * @brief Loads the values from the JSON file to the registered variables.
      */
     bool loadConfig();
 
     /**
-     * @brief Reinicia as configurações de rede (Limpa WiFi e entra em modo AP).
+     * @brief Resets network configuration (clears WiFi and enters AP mode).
      */
     void resetNetwork();
 
     /**
-     * @brief Define o hostname mDNS para acesso amigável (ex: "configmanager.local").
-     * @param hostname Nome sem ".local" (ex: "configure" resultará em "configure.local")
+     * @brief Sets the mDNS hostname for friendly access (e.g., "configmanager.local").
+     * @param hostname Name without ".local" (e.g., "configure" will result in "configure.local")
      */
     void setMdnsHostname(const String& hostname);
 
@@ -76,17 +76,17 @@ private:
     String _apSSID;
     String _apPassword;
     
-    // Configurações de Rede Internas
+    // Internal Network Configuration
     String _wifiSSID;
     String _wifiPassword;
     String _mdnsHostname = "configmanager";
 
-    // Métodos Privados
+    // Private Methods
     void setupCaptivePortal();
     void startAP();
     bool connectWiFi();
     
-    // Constantes de Caminho
+    // Path Constants
     const char* _configPath = "/config.json";
 };
 
