@@ -167,7 +167,10 @@ img.loading{
     <h1>WiFi Settings</h1>
     <form id="wifiForm">
       <label for="ssid">WiFi SSID:</label>
-      <input type="text" id="ssid" name="ssid" value="MyHomeNetwork"><br><br>
+      <select id="ssid" name="ssid">
+        <option value="" disabled selected>Loading WiFi networks...</option>
+      </select>
+      <button type="button" id="refreshWifiList">Refresh</button><br><br>
       
       <label for="password">Password:</label>
       <input type="password" id="password" name="password" value="mypassword123"><br><br>
@@ -247,6 +250,43 @@ img.loading{
     }
   }
 
+  async function loadWifiSsids() {
+    const select = document.getElementById('ssid');
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML = '<option value="" disabled selected>Loading WiFi networks...</option>';
+
+    try {
+      const response = await fetch('/api/ssids');
+      if (!response.ok) {
+        throw new Error('Failed to load WiFi SSIDs');
+      }
+
+      const data = await response.json();
+      const networks = Array.isArray(data.ssids) ? data.ssids : [];
+
+      if (networks.length === 0) {
+        select.innerHTML = '<option value="" disabled selected>No networks found</option>';
+        return;
+      }
+
+      select.innerHTML = '';
+      networks.forEach((network) => {
+        const option = document.createElement('option');
+        option.value = network.ssid || '';
+        const signal = network.rssi !== undefined ? `${network.rssi} dBm` : 'N/A';
+        const channel = network.channel !== undefined ? `ch ${network.channel}` : '';
+        option.textContent = `${network.ssid || 'Unknown'} (${signal}${channel ? `, ${channel}` : ''})`;
+        select.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error loading WiFi SSIDs:', error);
+      select.innerHTML = '<option value="" disabled selected>Error loading networks</option>';
+    }
+  }
+
   function fetchData() {
     fetch('/api/status')
       .then(response => response.text())
@@ -271,5 +311,10 @@ img.loading{
   window.addEventListener('DOMContentLoaded', () => {
     loadConfig();
     fetchData();
+    loadWifiSsids();
+    const refreshButton = document.getElementById('refreshWifiList');
+    if (refreshButton) {
+      refreshButton.addEventListener('click', loadWifiSsids);
+    }
   });
 </script></body></html>
