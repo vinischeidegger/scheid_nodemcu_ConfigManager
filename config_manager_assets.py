@@ -7,18 +7,26 @@ try:
 except NameError:
     from SCons.Script import env # type: ignore
 
+# --- PHASE 1: FORCE DIRECTORY RECOGNITION ---
+# We fetch the path directly from the project configuration
+project_config = env.GetProjectConfig()
+project_dir = env.get("PROJECT_DIR")
+data_dir_name = project_config.get("env:" + env["PIOENV"], "data_dir", "data")
+full_data_path = os.path.join(project_dir, data_dir_name)
+
+if not os.path.exists(full_data_path):
+    print(f"--- ConfigManager: Pre-creating data directory: {full_data_path} ---")
+    os.makedirs(full_data_path)
+
 def sync_and_compress_assets(source, target, env):
     # 1. Setup Paths
     # Path to your library's private assets
     lib_dir = os.path.dirname(os.path.realpath(__file__))
     lib_data_src = os.path.join(lib_dir, "data")
-    
-    # Path to the user's project data directory
-    project_data_dir = env.get("PROJECTDATA_DIR")
-    
+
     # Target subdirectory to isolate your library files
     # This prevents overwriting the user's own index.html
-    target_sub_dir = os.path.join(project_data_dir, "cm") 
+    target_sub_dir = os.path.join(full_data_path, "cm")
 
     # 2. Sync Phase: Copy library files to the project
     if os.path.exists(lib_data_src):
@@ -34,8 +42,8 @@ def sync_and_compress_assets(source, target, env):
 
     # 3. Compression Phase: Gzip the files in the project data dir
     # We scan the WHOLE project data dir so user files get compressed too (a nice bonus!)
-    print(f"--- ConfigManager: Auto-compressing all assets in {project_data_dir} ---")
-    for root, dirs, files in os.walk(project_data_dir):
+    print(f"--- ConfigManager: Auto-compressing all assets in {full_data_path} ---")
+    for root, dirs, files in os.walk(full_data_path):
         for file in files:
             # Compress common web files that don't have a .gz version yet
             if file.endswith((".html", ".css", ".js", ".json")) and not file.endswith(".gz"):
@@ -47,9 +55,7 @@ def sync_and_compress_assets(source, target, env):
                     with open(file_path, 'rb') as f_in:
                         with gzip.open(gz_path, 'wb') as f_out:
                             shutil.copyfileobj(f_in, f_out)
-                    print(f"  + Compressed: {os.path.relpath(gz_path, project_data_dir)}")
+                    print(f"  + Compressed: {os.path.relpath(gz_path, full_data_path)}")
 
-# Hook into the build process BEFORE the filesystem image is created
-# We hook into the .bin targets to ensure it runs for 'Build Filesystem' and 'Upload Filesystem'
-env.AddPreAction("$BUILD_DIR/spiffs.bin", sync_and_compress_assets)
-env.AddPreAction("$BUILD_DIR/littlefs.bin", sync_and_compress_assets)
+env.AddPreAction("buildfs", sync_and_compress_assets)
+env.AddPreAction("uploadfs", sync_and_compress_assets)

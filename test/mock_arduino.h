@@ -24,46 +24,6 @@ private:
     std::string _str;
 };
 
-// Mock ArduinoJson types
-namespace ArduinoJson {
-    class JsonDocument {
-    public:
-        template<typename T>
-        void operator[](const char* key) { /* mock */ }
-        template<typename T>
-        T as() const { return T(); }
-        bool is() const { return true; }
-    };
-
-    template<typename T>
-    class DeserializationError {
-    public:
-        operator bool() const { return false; }
-    };
-
-    template<typename T>
-    DeserializationError<T> deserializeJson(JsonDocument& doc, const std::string& json) {
-        return DeserializationError<T>();
-    }
-
-    template<typename T>
-    void serializeJson(const JsonDocument& doc, std::string& output) {
-        output = "{}";
-    }
-}
-
-// Mock LittleFS
-namespace LittleFS {
-    class File {
-    public:
-        operator bool() const { return true; }
-        void close() {}
-    };
-
-    bool begin() { return true; }
-    void format() {}
-    File open(const char* path, const char* mode) { return File(); }
-}
 
 // Mock Serial
 class SerialClass {
