@@ -18,7 +18,7 @@
     "bblanchon/ArduinoJson": "^7.0.0"
   },
   "build": {
-    "extra_script": "config_manager_assets.py"
+    "extra_scripts": "scripts/config_manager_assets.py"
   },
   "examples": [
     "examples/BasicSetup/main.cpp"
