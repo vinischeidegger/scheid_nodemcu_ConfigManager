@@ -3,28 +3,9 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <map>
 #include <vector>
-
-/**
- * @brief Supported data types for configuration parameters.
- */
-enum class ParamType {
-    INT,
-    FLOAT,
-    STRING,
-    BOOL
-};
-
-/**
- * @brief Internal structure to map product variables to ConfigManager.
- */
-struct ConfigParameter {
-    String id;
-    void* valuePointer;
-    ParamType type;
-    String label;
-};
+#include "ConfigData.h"
+#include "NetworkService.h"
 
 /**
  * @brief Options for constructing a ConfigManager instance.
@@ -32,6 +13,7 @@ struct ConfigParameter {
 struct ConfigManagerOptions {
     String apSSID = "Scheid Config";
     String mdnsHostname = "configmanager";
+    String pageTitle = "Scheid Product Configuration";
 };
 
 class ConfigManager {
@@ -41,6 +23,11 @@ public:
      * @param options Configuration options for the manager
      */
     ConfigManager(const ConfigManagerOptions& options = ConfigManagerOptions());
+
+    /**
+     * @brief Destroys the ConfigManager instance and releases internal resources.
+     */
+    ~ConfigManager();
     
     /**
      * @brief Registers a parameter that will be managed by the portal and saved in memory.
@@ -83,23 +70,41 @@ public:
      */
     void setMdnsHostname(const String& hostname);
 
-private:
-    std::vector<ConfigParameter> _parameters;
-    String _apSSID;
-    String _apPassword;
-    
-    // Internal Network Configuration
-    String _wifiSSID;
-    String _wifiPassword;
-    String _mdnsHostname;
+    /**
+     * @brief Sets the web portal page title.
+     * @param title Title text served by the REST API
+     */
+    void setPageTitle(const String& title);
 
-    // Private Methods
-    void setupCaptivePortal();
-    void startAP();
-    bool connectWiFi();
-    
-    // Path Constants
-    const char* _configPath = "/config.json";
+    /**
+     * @brief Returns the current web portal page title.
+     */
+    String getPageTitle() const;
+
+    /**
+     * @brief Returns the configured mDNS hostname.
+     */
+    String getMdnsHostname() const;
+
+    /**
+     * @brief Returns the configured access point SSID.
+     */
+    String getApSsid() const;
+
+    /**
+     * @brief Returns the configured WiFi SSID.
+     */
+    String getWifiSsid() const;
+
+    /**
+     * @brief Returns the registered configuration parameters.
+     */
+    const std::vector<ConfigParameter>& getParameters() const;
+
+private:
+    ConfigData _configData;
+    NetworkService _configService;
+    ConfigManagerOptions _options;
 };
 
 #endif // CORE_CONFIG_MANAGER_H

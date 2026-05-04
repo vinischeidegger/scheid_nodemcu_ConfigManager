@@ -4,10 +4,7 @@
 // ==========================================
 // 1. CONFIGURATION MODULE INSTANCE
 // ==========================================
-// Initialize with named option values for safer construction
-ConfigManagerOptions configOptions;
-configOptions.mdnsHostname = "pressure.config";
-ConfigManager configManager(configOptions);
+ConfigManager configManager;
 
 // ==========================================
 // 2. BUSINESS VARIABLES FOR THIS PRODUCT
@@ -35,6 +32,10 @@ void setup() {
     configManager.registerParameter("reading_time", &readingTimeMs, ParamType::INT, "Time between readings (ms)");
     configManager.registerParameter("alarm", &isAlarmActive, ParamType::BOOL, "Enable Alarm");
     configManager.registerParameter("name", &equipmentName, ParamType::STRING, "Equipment Name");
+
+    // Use ConfigManager for the page title and hostname.
+    configManager.setMdnsHostname("pressure.config");
+    configManager.setPageTitle("Scheid Product Configuration");
 
     // ==========================================
     // 4. BASE SYSTEM INITIALIZATION

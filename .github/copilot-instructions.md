@@ -25,6 +25,7 @@
 - If the repository does not contain `platformio.ini` or any code directories, do not attempt a PlatformIO build; instead confirm the correct checkout.
 - Use `git status --short` to validate local file state after making edits.
 - If a `platformio.ini` file appears, inspect its environments and test targets before choosing commands.
+- **Important**: Only run `pio run` on example folders (e.g., `examples/BasicSetup/`). Do not run `pio run` on the main library folder as it lacks the required `setup()` and `loop()` functions for a complete Arduino sketch.
 
 ## Project layout expectations
 
