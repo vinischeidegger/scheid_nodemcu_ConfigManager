@@ -39,6 +39,28 @@ lib_deps =
     bblanchon/ArduinoJson @ ^6.21.0
 ```
 
+## 📂 Deployment & Filesystem
+
+> [!IMPORTANT]
+> **Don't forget the Filesystem!**
+> This library uses **LittleFS** to serve the web interface. Uploading the firmware (using the standard **Upload** button) **does not** upload the web files.
+
+### How to Upload the Web Interface
+To ensure the configuration page works, you must run the **Upload Filesystem Image** task in PlatformIO:
+
+1.  Open the **PlatformIO** sidebar (the Ant head icon).
+2.  Navigate to your Project's environment (e.g., `env:nodemcuv2`).
+3.  Expand the **Platform** folder.
+4.  Click **Upload Filesystem Image**.
+
+### Asset Automation
+This library includes a custom build script that handles everything for you during the build process:
+*   **Sync**: Automatically copies library assets into your `data/cm` folder.
+*   **Compression**: Gzips your HTML, CSS, and JS files to save space on the NodeMCU.
+*   **Isolation**: Keeps library files in the `/cm` subdirectory to avoid overwriting your own project files.
+
+**Note:** You do not need to manually copy any files. Just run the upload task above and the script will ensure your device has the latest, most optimized web assets.
+
 ## 🚀 Quick Start
 
 Here is a minimal example of how to implement `ConfigManager` in a new product. (See `src/main.cpp` for a complete working example.)

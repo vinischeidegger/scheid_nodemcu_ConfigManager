@@ -27,7 +27,7 @@ void CaptivePortal::setupRoutes() {
     auto& server = _server;
 
     // Root route (loads compressed HTML from file system)
-    _server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
+    _server.serveStatic("/", LittleFS, "/cm").setDefaultFile("index.html");
 
     // You still need a fallback for when the files are missing from LittleFS
     _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
