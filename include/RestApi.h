@@ -26,12 +26,13 @@ public:
     void setup();
 
 private:
-    NetworkService& _configService;
+    NetworkService& _networkService;
     AsyncWebServer& _server;
 
     void setupConfigEndpoint();
     void setupStatusEndpoint();
     void setupSaveEndpoint();
+    void setupScanEndpoint();
 };
 
 #endif // CORE_REST_API_H

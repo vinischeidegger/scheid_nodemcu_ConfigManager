@@ -80,6 +80,43 @@ const std::vector<ConfigParameter>& NetworkService::getParameters() const {
     return _configData.getParameters();
 }
 
+static String encryptionTypeName(uint8_t type) {
+    switch (type) {
+        case ENC_TYPE_WEP:
+            return "WEP";
+        case ENC_TYPE_TKIP:
+            return "WPA";
+        case ENC_TYPE_CCMP:
+            return "WPA2";
+        case ENC_TYPE_NONE:
+            return "OPEN";
+        case ENC_TYPE_AUTO:
+            return "AUTO";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+std::vector<WiFiScanResult> NetworkService::scanSsids() {
+    std::vector<WiFiScanResult> results;
+
+    WiFi.mode(WIFI_STA);
+    int networkCount = WiFi.scanNetworks();
+    for (int i = 0; i < networkCount; ++i) {
+        WiFiScanResult result;
+        result.ssid = WiFi.SSID(i);
+        result.rssi = WiFi.RSSI(i);
+        result.encryption = encryptionTypeName(WiFi.encryptionType(i));
+        result.bssid = WiFi.BSSIDstr(i);
+        result.channel = WiFi.channel(i);
+        result.hidden = WiFi.isHidden(i);
+        results.push_back(result);
+    }
+
+    WiFi.scanDelete();
+    return results;
+}
+
 bool NetworkService::connectWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(_wifiSSID.c_str(), _wifiPassword.c_str());

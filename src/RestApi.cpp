@@ -3,25 +3,26 @@
 #include <ArduinoJson.h>
 
 RestApi::RestApi(NetworkService& configService, AsyncWebServer& server)
-    : _configService(configService), _server(server) {
+    : _networkService(configService), _server(server) {
 }
 
 void RestApi::setup() {
     setupConfigEndpoint();
     setupStatusEndpoint();
     setupSaveEndpoint();
+    setupScanEndpoint();
 }
 
 void RestApi::setupConfigEndpoint() {
     _server.on("/api/config", HTTP_GET, [this](AsyncWebServerRequest *request) {
         JsonDocument responseDoc;
-        responseDoc["page_title"] = _configService.getPageTitle();
-        responseDoc["mdns_hostname"] = _configService.getMdnsHostname();
-        responseDoc["ap_ssid"] = _configService.getApSsid();
-        responseDoc["wifi_ssid"] = _configService.getWifiSsid();
+        responseDoc["page_title"] = _networkService.getPageTitle();
+        responseDoc["mdns_hostname"] = _networkService.getMdnsHostname();
+        responseDoc["ap_ssid"] = _networkService.getApSsid();
+        responseDoc["wifi_ssid"] = _networkService.getWifiSsid();
 
         JsonArray params = responseDoc["parameters"].to<JsonArray>();
-        for (const auto& param : _configService.getParameters()) {
+        for (const auto& param : _networkService.getParameters()) {
             JsonObject paramObj = params.add<JsonObject>();
             paramObj["id"] = param.id;
             paramObj["label"] = param.label;
@@ -63,5 +64,25 @@ void RestApi::setupSaveEndpoint() {
         request->send(200, "text/html", "<h1>Saved! Restarting...</h1>");
         delay(2000);
         ESP.restart();
+    });
+}
+
+void RestApi::setupScanEndpoint() {
+    _server.on("/api/ssids", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        StaticJsonDocument<2048> responseDoc;
+        JsonArray ssidArray = responseDoc["ssids"].to<JsonArray>();
+        for (const auto& result : _networkService.scanSsids()) {
+            JsonObject item = ssidArray.add<JsonObject>();
+            item["ssid"] = result.ssid;
+            item["rssi"] = result.rssi;
+            item["channel"] = result.channel;
+            item["encryption"] = result.encryption;
+            item["bssid"] = result.bssid;
+            item["hidden"] = result.hidden;
+        }
+
+        String responseBody;
+        serializeJson(responseDoc, responseBody);
+        request->send(200, "application/json", responseBody);
     });
 }

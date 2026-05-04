@@ -7,6 +7,15 @@
 #include "CaptivePortal.h"
 #include "RestApi.h"
 
+struct WiFiScanResult {
+    String ssid;
+    int rssi;
+    String encryption;
+    String bssid;
+    int channel;
+    bool hidden;
+};
+
 class NetworkService {
 public:
     /**
@@ -71,6 +80,11 @@ public:
      * @brief Returns the registered configuration parameters.
      */
     const std::vector<ConfigParameter>& getParameters() const;
+
+    /**
+     * @brief Performs a WiFi network scan and returns discovered networks.
+     */
+    std::vector<WiFiScanResult> scanSsids();
 
 private:
     ConfigData& _configData;
