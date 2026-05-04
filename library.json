@@ -12,12 +12,11 @@
   "license": "MIT",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
-  "dependencies": [
-    {
-      "name": "ArduinoJson",
-      "version": "^7.0.0"
-    }
-  ],
+  "dependencies": {
+    "ottowinter/ESPAsyncWebServer-esphome": "^3.1.0",
+    "esphome/AsyncTCP-esphome": "^2.1.1",
+    "bblanchon/ArduinoJson": "^7.0.0"
+  },
   "examples": [
     "examples/BasicSetup/main.cpp"
   ]

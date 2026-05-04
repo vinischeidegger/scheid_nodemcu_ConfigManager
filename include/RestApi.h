@@ -2,7 +2,7 @@
 #define CORE_REST_API_H
 
 #include <Arduino.h>
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 
 // Forward declaration
 class NetworkService;
@@ -18,7 +18,7 @@ public:
      * @param configService Reference to the ConfigService instance
      * @param server Reference to the web server instance
      */
-    RestApi(NetworkService& configService, ESP8266WebServer& server);
+    RestApi(NetworkService& configService, AsyncWebServer& server);
 
     /**
      * @brief Sets up all REST API endpoints.
@@ -27,7 +27,7 @@ public:
 
 private:
     NetworkService& _configService;
-    ESP8266WebServer& _server;
+    AsyncWebServer& _server;
 
     void setupConfigEndpoint();
     void setupStatusEndpoint();

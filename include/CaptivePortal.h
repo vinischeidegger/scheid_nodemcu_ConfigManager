@@ -2,7 +2,7 @@
 #define CORE_CAPTIVE_PORTAL_H
 
 #include <Arduino.h>
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
 
 // Forward declaration
@@ -35,11 +35,11 @@ public:
     /**
      * @brief Provides access to the internal web server used by the portal.
      */
-    ESP8266WebServer& getServer();
+    AsyncWebServer& getServer();
 
 private:
     NetworkService& _configService;
-    ESP8266WebServer _server;
+    AsyncWebServer _server;
     DNSServer _dnsServer;
 
     void setupRoutes();

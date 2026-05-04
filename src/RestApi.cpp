@@ -2,7 +2,7 @@
 #include "RestApi.h"
 #include <ArduinoJson.h>
 
-RestApi::RestApi(NetworkService& configService, ESP8266WebServer& server)
+RestApi::RestApi(NetworkService& configService, AsyncWebServer& server)
     : _configService(configService), _server(server) {
 }
 
@@ -13,7 +13,7 @@ void RestApi::setup() {
 }
 
 void RestApi::setupConfigEndpoint() {
-    _server.on("/api/config", HTTP_GET, [this]() {
+    _server.on("/api/config", HTTP_GET, [this](AsyncWebServerRequest *request) {
         JsonDocument responseDoc;
         responseDoc["page_title"] = _configService.getPageTitle();
         responseDoc["mdns_hostname"] = _configService.getMdnsHostname();
@@ -43,30 +43,24 @@ void RestApi::setupConfigEndpoint() {
                     paramObj["value"] = *(bool*)param.valuePointer;
                     break;
             }
+            String responseBody;
+            ArduinoJson::serializeJson(responseDoc, responseBody);
+            request->send(200, "application/json", responseBody);
         }
-
-        String responseBody;
-        serializeJson(responseDoc, responseBody);
-        _server.send(200, "application/json", responseBody);
     });
 }
 
 void RestApi::setupStatusEndpoint() {
-    auto& server = _server;
-
-    server.on("/api/status", HTTP_GET, [&server]() {
-        server.send(200, "text/plain", "OK");
+    _server.on("/api/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(200, "text/plain", "OK");
     });
 
-    server.on("/status", HTTP_GET, [&server]() {
-        server.send(200, "text/plain", "OK");
-    });
 }
 
 void RestApi::setupSaveEndpoint() {
-    _server.on("/salvar", HTTP_POST, [this]() {
+    _server.on("/api/save", HTTP_POST, [this](AsyncWebServerRequest *request) {
         // Logic to get POST data, update _parameters and call saveConfig()
-        _server.send(200, "text/html", "<h1>Saved! Restarting...</h1>");
+        request->send(200, "text/html", "<h1>Saved! Restarting...</h1>");
         delay(2000);
         ESP.restart();
     });

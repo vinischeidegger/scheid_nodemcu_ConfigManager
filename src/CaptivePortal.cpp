@@ -18,7 +18,6 @@ void CaptivePortal::setup(const String& apSSID, const String& mdnsHostname) {
 
 void CaptivePortal::handle() {
     _dnsServer.processNextRequest();
-    _server.handleClient();
 }
 
 void CaptivePortal::setupRoutes() {
@@ -28,33 +27,22 @@ void CaptivePortal::setupRoutes() {
     auto& server = _server;
 
     // Root route (loads compressed HTML from file system)
-    server.on("/", [&server]() {
-        File file = LittleFS.open("/index.html.gz", "r");
-        if (file) {
-            server.sendHeader("Content-Encoding", "gzip");
-            server.streamFile(file, "text/html");
-            file.close();
-            return;
-        }
+    _server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
-        file = LittleFS.open("/index.html", "r");
-        if (file) {
-            server.streamFile(file, "text/html");
-            file.close();
-            return;
-        }
-
-        server.send(200, "text/html", "<h1>Welcome to Configuration</h1><p>Access via: <b>http://configmanager.local</b></p>");
+    // You still need a fallback for when the files are missing from LittleFS
+    _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        // If the static file handler above didn't catch the request, 
+        // it means index.html (or .gz) was not found.
+        request->send(200, "text/html", "<h1>Welcome to Configuration</h1><p>Access via: <b>http://configmanager.local</b></p>");
     });
 
     // Catch-all route to force Captive Portal on mobile devices
-    server.onNotFound([&server]() {
-        server.sendHeader("Location", "/", true); // Redirects to root
-        server.send(302, "text/plain", "");
+    server.onNotFound([&server](AsyncWebServerRequest *request) {
+        request->redirect("/");
     });
 }
 
-ESP8266WebServer& CaptivePortal::getServer() {
+AsyncWebServer& CaptivePortal::getServer() {
     return _server;
 }
 

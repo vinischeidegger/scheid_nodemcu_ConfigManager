@@ -2,6 +2,11 @@
 #define MOCK_ARDUINO_JSON_H
 
 #include "mock_arduino.h"
+#include <map>
+
+namespace LittleFS {
+    class File;
+}
 
 namespace ArduinoJson {
     class JsonDocument {
@@ -30,6 +35,7 @@ namespace ArduinoJson {
         private:
             std::string _value;
             std::string& _storage;
+            std::string* _valueRef = nullptr;
         };
 
         JsonDocument() = default;
@@ -90,6 +96,19 @@ namespace ArduinoJson {
     void serializeJson(const T& doc, std::string& output) {
         (void)doc;
         output = "{}";
+    }
+
+    template<typename T>
+    DeserializationError<T> deserializeJson(T& doc, const LittleFS::File& file) {
+        (void)doc;
+        (void)file;
+        return DeserializationError<T>(true);
+    }
+
+    template<typename T>
+    void serializeJson(const T& doc, LittleFS::File& file) {
+        (void)doc;
+        (void)file;
     }
 }
 
