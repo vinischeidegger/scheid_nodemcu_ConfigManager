@@ -4,13 +4,8 @@
 #include <Arduino.h>
 #include "ConfigData.h"
 
-#ifndef ARDUINO
-#include "../test/mocks/CaptivePortal.h"
-#include "../test/mocks/RestApi.h"
-#else
 #include "CaptivePortal.h"
 #include "RestApi.h"
-#endif
 
 class NetworkService {
 public:

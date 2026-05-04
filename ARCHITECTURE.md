@@ -14,7 +14,7 @@ You are an expert C++ embedded systems engineer. You are assisting in building t
 2.  **Responsibility:** This module handles WiFi connection, Captive Portal fallback (AP mode), and persistent storage (LittleFS/SPIFFS) via JSON.
 3.  **Dependency Injection:** Do not hardcode product-specific variables. Use a registration system (e.g., `registerParameter()`) so external apps can inject their specific variables (like pressure setpoints or flow limits) into this manager.
 4.  **Memory Optimization:** Use pointers, references, and avoid String duplication where possible. ESP hardware has limited RAM.
-5.  **Testing:** Code must be testable. Isolate logic for Native testing (`gtest`) and hardware testing (`Unity`).
+5.  **Maintainability:** Code must be maintainable. Isolate logic and use clean interfaces for hardware and network services.
 
 ## Git Convention
 * **Branching:** GitHub Flow (feature branches merging into `master`).
