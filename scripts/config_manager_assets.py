@@ -1,11 +1,19 @@
 import os
 import gzip
 import shutil
+import re
 
 try:
     Import("env") # type: ignore
 except NameError:
     from SCons.Script import env # type: ignore
+
+# Optional minification support
+try:
+    from html_minifier import minify
+    MINIFIER_AVAILABLE = True
+except ImportError:
+    MINIFIER_AVAILABLE = False
 
 # --- PHASE 1: FORCE DIRECTORY RECOGNITION ---
 # We fetch the path directly from the project configuration
@@ -37,7 +45,8 @@ def sync_and_compress_assets(source, target, env):
     if lib_dir.endswith('scripts'):
         lib_dir = os.path.dirname(lib_dir)
 
-    lib_data_src = os.path.join(lib_dir, "data")
+    # Look for source files in the library's web_src folder
+    lib_data_src = os.path.join(lib_dir, "web_src")
 
     # Target subdirectory to isolate your library files
     # This prevents overwriting the user's own index.html
@@ -45,6 +54,9 @@ def sync_and_compress_assets(source, target, env):
 
     print(f"DEBUG: Syncing from {lib_data_src} to {target_sub_dir}")
 
+    # Check if minification is enabled
+    minify_enabled = project_config.getboolean("env:" + env["PIOENV"], "minify_assets", False)
+    
     # 2. Sync Phase: Copy library files to the project
     if os.path.exists(lib_data_src):
         print(f"--- ConfigManager: Syncing isolated assets to {target_sub_dir} ---")
@@ -57,7 +69,68 @@ def sync_and_compress_assets(source, target, env):
             if not os.path.isdir(s): # Only copy files
                 shutil.copy2(s, d)
 
-    # 3. Compression Phase: Gzip the files in the project data dir
+    # 3. Optional JavaScript Inlining Phase
+    # Inline external JavaScript files referenced via <script src="..."></script>
+    print(f"--- ConfigManager: Inlining JavaScript assets in {full_data_path} ---")
+    for root, dirs, files in os.walk(full_data_path):
+        for file in files:
+            if file.endswith(".html"):
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
+                    
+                    # Find all external script references
+                    script_pattern = r'<script\s+src="([^"]+)"\s*></script>'
+                    
+                    def inline_script(match):
+                        script_src = match.group(1)
+                        script_path = os.path.join(root, script_src)
+                        
+                        # Only inline local files (not absolute paths or URLs)
+                        if os.path.exists(script_path) and not script_src.startswith(('http://', 'https://', '/')):
+                            try:
+                                with open(script_path, 'r', encoding='utf-8') as f:
+                                    script_content = f.read()
+                                print(f"  + Inlined: {os.path.relpath(script_path, full_data_path)}")
+                                return f'<script>{script_content}</script>'
+                            except Exception as e:
+                                print(f"  ! Warning: Failed to inline {script_src}: {e}")
+                                return match.group(0)
+                        return match.group(0)
+                    
+                    # Replace external scripts with inline versions
+                    inlined_content = re.sub(script_pattern, inline_script, html_content)
+                    
+                    # Only write if content changed
+                    if inlined_content != html_content:
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(inlined_content)
+                        print(f"  + Updated: {os.path.relpath(file_path, full_data_path)}")
+                except Exception as e:
+                    print(f"  ! Warning: Failed to process {file}: {e}")
+
+    # 4. Optional Minification Phase
+    if minify_enabled and MINIFIER_AVAILABLE:
+        print(f"--- ConfigManager: Minifying web assets in {full_data_path} ---")
+        for root, dirs, files in os.walk(full_data_path):
+            for file in files:
+                if file.endswith(".html") and not file.endswith(".min.html"):
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            original_content = f.read()
+                        minified_content = minify(original_content)
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(minified_content)
+                        print(f"  + Minified: {os.path.relpath(file_path, full_data_path)}")
+                    except Exception as e:
+                        print(f"  ! Warning: Failed to minify {file}: {e}")
+    elif minify_enabled and not MINIFIER_AVAILABLE:
+        print("--- ConfigManager: WARNING: minify_assets enabled but html-minifier not installed ---")
+        print("  Install with: pip install html-minifier")
+
+    # 5. Compression Phase: Gzip the files in the project data dir
     # We scan the WHOLE project data dir so user files get compressed too (a nice bonus!)
     print(f"--- ConfigManager: Auto-compressing all assets in {full_data_path} ---")
     for root, dirs, files in os.walk(full_data_path):
@@ -76,7 +149,7 @@ def sync_and_compress_assets(source, target, env):
                 
                 # Delete the source file so only the .gz remains for upload
                 os.remove(file_path)
-                print(f"  + Optimized: {file} removed, kept {file}.gz")                
+                print(f"  + Optimized: {file} removed, kept {file}.gz")
 
 env.AddPreAction("$BUILD_DIR/littlefs.bin", sync_and_compress_assets)
 env.AddPreAction("$BUILD_DIR/spiffs.bin", sync_and_compress_assets)
