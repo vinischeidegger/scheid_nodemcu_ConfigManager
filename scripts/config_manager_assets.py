@@ -10,7 +10,7 @@ except NameError:
 
 # Optional minification support
 try:
-    from html_minifier import minify
+    from css_html_js_minify import html_minify
     MINIFIER_AVAILABLE = True
 except ImportError:
     MINIFIER_AVAILABLE = False
@@ -55,7 +55,16 @@ def sync_and_compress_assets(source, target, env):
     print(f"DEBUG: Syncing from {lib_data_src} to {target_sub_dir}")
 
     # Check if minification is enabled
-    minify_enabled = project_config.getboolean("env:" + env["PIOENV"], "minify_assets", False)
+    try:
+        minify_enabled = project_config.getboolean("env:" + env["PIOENV"], "minify_assets", True)
+    except TypeError:
+        # Older RawConfigParser implementations do not support a fallback arg.
+        try:
+            minify_enabled = project_config.getboolean("env:" + env["PIOENV"], "minify_assets")
+        except Exception:
+            minify_enabled = True
+    except Exception:
+        minify_enabled = True
     
     # 2. Sync Phase: Copy library files to the project
     if os.path.exists(lib_data_src):
@@ -81,7 +90,7 @@ def sync_and_compress_assets(source, target, env):
                         html_content = f.read()
                     
                     # Find all external script references
-                    script_pattern = r'<script\s+src="([^"]+)"\s*></script>'
+                    script_pattern = r'<script\s+src=(?:"([^"]+)"|([^ >]+))\s*></script>'
                     
                     def inline_script(match):
                         script_src = match.group(1)
@@ -120,21 +129,24 @@ def sync_and_compress_assets(source, target, env):
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             original_content = f.read()
-                        minified_content = minify(original_content)
+                        minified_content = html_minify(original_content)
                         with open(file_path, 'w', encoding='utf-8') as f:
                             f.write(minified_content)
                         print(f"  + Minified: {os.path.relpath(file_path, full_data_path)}")
                     except Exception as e:
                         print(f"  ! Warning: Failed to minify {file}: {e}")
     elif minify_enabled and not MINIFIER_AVAILABLE:
-        print("--- ConfigManager: WARNING: minify_assets enabled but html-minifier not installed ---")
-        print("  Install with: pip install html-minifier")
+        print("--- ConfigManager: WARNING: minify_assets enabled but css-html-js-minify not installed ---")
+        print("  Install with: pip install css-html-js-minify")
 
     # 5. Compression Phase: Gzip the files in the project data dir
     # We scan the WHOLE project data dir so user files get compressed too (a nice bonus!)
-    print(f"--- ConfigManager: Auto-compressing all assets in {full_data_path} ---")
+    print(f"--- ConfigManager: Auto-compressing index.html in {full_data_path} ---")
     for root, dirs, files in os.walk(full_data_path):
         for file in files:
+            # Skip app.js entirely; it must not be copied or gzipped
+            if file != "index.html":
+                continue
             # Compress common web files that don't have a .gz version yet
             if file.endswith((".html", ".css", ".js", ".json")) and not file.endswith(".gz"):
                 file_path = os.path.join(root, file)
