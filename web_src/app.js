@@ -230,9 +230,8 @@ async function loadWifiSsids() {
     const headerRow = document.createElement('div');
     headerRow.className = 'ssid-row ssid-header';
     headerRow.innerHTML = `
-      <div></div>
       <div class="ssid-name-header">Network Name</div>
-      <div>Signal</div>
+      <div>Signal Quality</div>
       <div>Security</div>
     `;
     listDiv.appendChild(headerRow);
@@ -245,15 +244,13 @@ async function loadWifiSsids() {
       row.dataset.security = info.encryption;
       const strength = getWifiStrength(info.rssi);
       row.innerHTML = `
-        <div class="ssid-radio-cell">
-          <input id="ssid-${index}" type="radio" name="ssid" value="${info.ssid}">
-        </div>
-        <label for="ssid-${index}" class="ssid-name">${info.ssid}</label>
+        <input id="ssid-${index}" type="radio" name="ssid" value="${info.ssid}">
+        <span class="ssid-name">${info.ssid}</span>
         <div class="ssid-signal-cell">
           <div class="signal-bars">${renderSignalBars(strength.level)}</div>
-          <div class="signal-label">${strength.label} (${info.rssi} dBm)</div>
+          <span class="signal-label">${strength.label}</span>
         </div>
-        <div>${info.encryption !== 'Open' ? '🔒 ' + info.encryption : 'Open'}</div>
+        <span>${info.encryption !== 'Open' ? '🔒 ' + info.encryption : 'Open'}</span>
       `;
 
       const radio = row.querySelector('input[type="radio"]');
