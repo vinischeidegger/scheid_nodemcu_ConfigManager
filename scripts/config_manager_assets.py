@@ -93,10 +93,13 @@ def sync_and_compress_assets(source, target, env):
                     script_pattern = r'<script\s+src=(?:"([^"]+)"|([^ >]+))\s*></script>'
                     
                     def inline_script(match):
-                        script_src = match.group(1)
+                        script_src = match.group(1) or match.group(2)
+                        if not script_src:
+                            return match.group(0)
+
                         script_path = os.path.join(root, script_src)
-                        
-                        # Only inline local files (not absolute paths or URLs)
+
+                        # Only inline local files (not absolute paths or URLs).
                         if os.path.exists(script_path) and not script_src.startswith(('http://', 'https://', '/')):
                             try:
                                 with open(script_path, 'r', encoding='utf-8') as f:
@@ -129,6 +132,9 @@ def sync_and_compress_assets(source, target, env):
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             original_content = f.read()
+                        if '<script' in original_content.lower():
+                            print(f"  + Skipped minifying {os.path.relpath(file_path, full_data_path)} because it contains inline script")
+                            continue
                         minified_content = html_minify(original_content)
                         with open(file_path, 'w', encoding='utf-8') as f:
                             f.write(minified_content)

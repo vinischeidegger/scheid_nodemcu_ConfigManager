@@ -83,8 +83,15 @@ public:
 
     /**
      * @brief Performs a WiFi network scan and returns discovered networks.
+     * @note This function uses cached scan results and async scan to avoid
+     *       blocking the WiFi server loop during long scans.
      */
     std::vector<WiFiScanResult> scanSsids();
+
+    /**
+     * @brief Returns true when a WiFi scan is currently in progress.
+     */
+    bool isScanActive() const;
 
 private:
     ConfigData& _configData;
@@ -96,6 +103,11 @@ private:
 
     CaptivePortal* _captivePortal = nullptr;
     RestApi* _restApi = nullptr;
+
+    // Cached scan state for /api/ssids.
+    std::vector<WiFiScanResult> _scanCache;
+    unsigned long _lastScanTimestamp = 0;
+    bool _scanInProgress = false;
 
     // Private Methods
     bool connectWiFi();

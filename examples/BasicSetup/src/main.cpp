@@ -12,7 +12,7 @@ ConfigManager configManager;
 // These are the "factory" values. If there is anything already saved on the NodeMCU,
 // ConfigManager will automatically overwrite these values in setup.
 float pressureSetpoint = 3.5;       // Desired pressure in Bar
-unsigned long readingTimeMs = 2000;         // Time between sensor readings
+unsigned long readingTimeMs = 60000;         // Time between sensor readings (increased for debug)
 bool isAlarmActive = true;           // Enable/Disable alarm
 String equipmentName = "Pump 1"; 
 

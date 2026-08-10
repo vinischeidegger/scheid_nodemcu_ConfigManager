@@ -41,6 +41,8 @@ private:
     NetworkService& _configService;
     AsyncWebServer _server;
     DNSServer _dnsServer;
+    // Tracks connected station count to log connect/disconnect events
+    int _lastStationCount = -1;
 
     void setupRoutes();
     void startAP(const String& apSSID, const String& mdnsHostname);

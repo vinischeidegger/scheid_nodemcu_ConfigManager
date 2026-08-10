@@ -42,6 +42,9 @@ bool NetworkService::begin(const String& apSSID, const String& wifiSSID, const S
     Serial.println("[NetworkService] Starting AP mode and Captive Portal...");
     _captivePortal->setup(_apSSID, _mdnsHostname);
     _restApi->setup();
+    Serial.println("[NetworkService] REST endpoints setup complete");
+    // Start the web server after REST endpoints are registered so /api/* handlers are active
+    _captivePortal->getServer().begin();
     return false;
 }
 
@@ -98,23 +101,67 @@ static String encryptionTypeName(uint8_t type) {
 }
 
 std::vector<WiFiScanResult> NetworkService::scanSsids() {
-    std::vector<WiFiScanResult> results;
+    Serial.println("[NetworkService] scanSsids() called");
 
-    WiFi.mode(WIFI_STA);
-    int networkCount = WiFi.scanNetworks();
-    for (int i = 0; i < networkCount; ++i) {
-        WiFiScanResult result;
-        result.ssid = WiFi.SSID(i);
-        result.rssi = WiFi.RSSI(i);
-        result.encryption = encryptionTypeName(WiFi.encryptionType(i));
-        result.bssid = WiFi.BSSIDstr(i);
-        result.channel = WiFi.channel(i);
-        result.hidden = WiFi.isHidden(i);
-        results.push_back(result);
+    if (_scanInProgress) {
+        int scanResult = WiFi.scanComplete();
+        if (scanResult >= 0) {
+            Serial.println("[NetworkService] async scan completed");
+            _scanCache.clear();
+            for (int i = 0; i < scanResult; ++i) {
+                WiFiScanResult result;
+                result.ssid = WiFi.SSID(i);
+                result.rssi = WiFi.RSSI(i);
+                result.encryption = encryptionTypeName(WiFi.encryptionType(i));
+                result.bssid = WiFi.BSSIDstr(i);
+                result.channel = WiFi.channel(i);
+                result.hidden = WiFi.isHidden(i);
+                _scanCache.push_back(result);
+            }
+            WiFi.scanDelete();
+            _scanInProgress = false;
+            _lastScanTimestamp = millis();
+        } else {
+            Serial.println("[NetworkService] async scan still running, returning cached results");
+            return _scanCache;
+        }
     }
 
-    WiFi.scanDelete();
-    return results;
+    if (!_scanCache.empty() && (millis() - _lastScanTimestamp) < 60u * 1000u) {
+        Serial.println("[NetworkService] returning cached scan results");
+        return _scanCache;
+    }
+
+    Serial.println("[NetworkService] starting async scan");
+    WiFi.mode(WIFI_AP_STA);
+    int scanResult = WiFi.scanNetworks(true);
+
+    if (scanResult >= 0) {
+        Serial.println("[NetworkService] sync scan completed immediately");
+        _scanCache.clear();
+        for (int i = 0; i < scanResult; ++i) {
+            WiFiScanResult result;
+            result.ssid = WiFi.SSID(i);
+            result.rssi = WiFi.RSSI(i);
+            result.encryption = encryptionTypeName(WiFi.encryptionType(i));
+            result.bssid = WiFi.BSSIDstr(i);
+            result.channel = WiFi.channel(i);
+            result.hidden = WiFi.isHidden(i);
+            _scanCache.push_back(result);
+        }
+        WiFi.scanDelete();
+        _scanInProgress = false;
+        _lastScanTimestamp = millis();
+    } else {
+        _scanInProgress = true;
+        _lastScanTimestamp = millis();
+    }
+
+    return _scanCache;
+}
+
+bool NetworkService::isScanActive() const {
+    return _scanInProgress;
 }
 
 bool NetworkService::connectWiFi() {

@@ -14,12 +14,31 @@ bool ConfigData::saveConfig() {
 
     // Dynamically saves ALL parameters registered by products
     for (const auto& param : _parameters) {
+        if (!param.valuePointer) {
+            continue;
+        }
+
         switch (param.type) {
-            // Cast the void* pointer back to the original type
-            case ParamType::INT:    doc[param.id] = *(int*)param.valuePointer; break;
-            case ParamType::FLOAT:  doc[param.id] = *(float*)param.valuePointer; break;
-            case ParamType::STRING: doc[param.id] = *(String*)param.valuePointer; break;
-            case ParamType::BOOL:   doc[param.id] = *(bool*)param.valuePointer; break;
+            case ParamType::INT: {
+                int* value = static_cast<int*>(param.valuePointer);
+                doc[param.id] = *value;
+                break;
+            }
+            case ParamType::FLOAT: {
+                float* value = static_cast<float*>(param.valuePointer);
+                doc[param.id] = *value;
+                break;
+            }
+            case ParamType::STRING: {
+                String* value = static_cast<String*>(param.valuePointer);
+                doc[param.id] = *value;
+                break;
+            }
+            case ParamType::BOOL: {
+                bool* value = static_cast<bool*>(param.valuePointer);
+                doc[param.id] = *value;
+                break;
+            }
         }
     }
 
@@ -49,12 +68,30 @@ bool ConfigData::loadConfig() {
 
     // Dynamically updates variables in the product's main.cpp
     for (const auto& param : _parameters) {
-        if (!doc[param.id].isNull()) {
-            switch (param.type) {
-                case ParamType::INT:    *(int*)param.valuePointer = doc[param.id].as<int>(); break;
-                case ParamType::FLOAT:  *(float*)param.valuePointer = doc[param.id].as<float>(); break;
-                case ParamType::STRING: *(String*)param.valuePointer = doc[param.id].as<String>(); break;
-                case ParamType::BOOL:   *(bool*)param.valuePointer = doc[param.id].as<bool>(); break;
+        if (!param.valuePointer || doc[param.id].isNull()) {
+            continue;
+        }
+
+        switch (param.type) {
+            case ParamType::INT: {
+                int* value = static_cast<int*>(param.valuePointer);
+                *value = doc[param.id].as<int>();
+                break;
+            }
+            case ParamType::FLOAT: {
+                float* value = static_cast<float*>(param.valuePointer);
+                *value = doc[param.id].as<float>();
+                break;
+            }
+            case ParamType::STRING: {
+                String* value = static_cast<String*>(param.valuePointer);
+                *value = doc[param.id].as<String>();
+                break;
+            }
+            case ParamType::BOOL: {
+                bool* value = static_cast<bool*>(param.valuePointer);
+                *value = doc[param.id].as<bool>();
+                break;
             }
         }
     }

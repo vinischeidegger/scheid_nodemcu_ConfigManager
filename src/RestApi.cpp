@@ -7,47 +7,69 @@ RestApi::RestApi(NetworkService& configService, AsyncWebServer& server)
 }
 
 void RestApi::setup() {
+    // Simple ping endpoint to verify API reachability from clients
+    _server.on("/api/ping", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        Serial.println("[RestApi] /api/ping requested");
+        request->send(200, "application/json", "{\"ok\":true}");
+    });
+    Serial.println("[RestApi] Endpoints registered");
     setupConfigEndpoint();
     setupStatusEndpoint();
-    setupSaveEndpoint();
     setupScanEndpoint();
+    setupSaveEndpoint();
+
 }
 
 void RestApi::setupConfigEndpoint() {
     _server.on("/api/config", HTTP_GET, [this](AsyncWebServerRequest *request) {
         JsonDocument responseDoc;
+        String apSsid = _networkService.getApSsid();
         responseDoc["page_title"] = _networkService.getPageTitle();
         responseDoc["mdns_hostname"] = _networkService.getMdnsHostname();
-        responseDoc["ap_ssid"] = _networkService.getApSsid();
+        responseDoc["wifi_mode"] = apSsid == "" ? "STA" : "AP";
+        responseDoc["ap_ssid"] = apSsid;
         responseDoc["wifi_ssid"] = _networkService.getWifiSsid();
 
         JsonArray params = responseDoc["parameters"].to<JsonArray>();
         for (const auto& param : _networkService.getParameters()) {
+            if (!param.valuePointer) {
+                continue;
+            }
+
             JsonObject paramObj = params.add<JsonObject>();
             paramObj["id"] = param.id;
             paramObj["label"] = param.label;
             switch (param.type) {
-                case ParamType::INT:
+                case ParamType::INT: {
+                    int* value = static_cast<int*>(param.valuePointer);
                     paramObj["type"] = "int";
-                    paramObj["value"] = *(int*)param.valuePointer;
+                    paramObj["value"] = *value;
                     break;
-                case ParamType::FLOAT:
+                }
+                case ParamType::FLOAT: {
+                    float* value = static_cast<float*>(param.valuePointer);
                     paramObj["type"] = "float";
-                    paramObj["value"] = *(float*)param.valuePointer;
+                    paramObj["value"] = *value;
                     break;
-                case ParamType::STRING:
+                }
+                case ParamType::STRING: {
+                    String* value = static_cast<String*>(param.valuePointer);
                     paramObj["type"] = "string";
-                    paramObj["value"] = *(String*)param.valuePointer;
+                    paramObj["value"] = *value;
                     break;
-                case ParamType::BOOL:
+                }
+                case ParamType::BOOL: {
+                    bool* value = static_cast<bool*>(param.valuePointer);
                     paramObj["type"] = "bool";
-                    paramObj["value"] = *(bool*)param.valuePointer;
+                    paramObj["value"] = *value;
                     break;
+                }
             }
-            String responseBody;
-            ArduinoJson::serializeJson(responseDoc, responseBody);
-            request->send(200, "application/json", responseBody);
         }
+
+        String responseBody;
+        ArduinoJson::serializeJson(responseDoc, responseBody);
+        request->send(200, "application/json", responseBody);
     });
 }
 
@@ -69,6 +91,7 @@ void RestApi::setupSaveEndpoint() {
 
 void RestApi::setupScanEndpoint() {
     _server.on("/api/ssids", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        Serial.println("[RestApi] /api/ssids requested");
         StaticJsonDocument<2048> responseDoc;
         JsonArray ssidArray = responseDoc["ssids"].to<JsonArray>();
         for (const auto& result : _networkService.scanSsids()) {
@@ -80,6 +103,7 @@ void RestApi::setupScanEndpoint() {
             item["bssid"] = result.bssid;
             item["hidden"] = result.hidden;
         }
+        responseDoc["scanning"] = _networkService.isScanActive();
 
         String responseBody;
         serializeJson(responseDoc, responseBody);
