@@ -74,7 +74,7 @@ function getWifiStrength(rssi) {
 function renderSignalBars(level) {
   let bars = '';
   for (let i = 1; i <= 5; i++) {
-    bars += `<div class="signal-bar${i <= level ? ' active' : ''}" style="height: ${8 + i * 6}px"></div>`;
+    bars += `<div class="signal-bar${i <= level ? ' active' : ''}" style="height: ${4 + i * 3}px"></div>`;
   }
   return bars;
 }
