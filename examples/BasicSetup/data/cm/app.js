@@ -213,7 +213,7 @@ async function loadWifiSsids() {
     // Show loading indicator in fixed container
     const loadingContainer = document.getElementById('ssid-loading-container');
     if (loadingContainer) {
-      loadingContainer.innerHTML = '<img src="/images/loading.gif" alt="Loading..." style="height: 70px; float: right;">';
+      loadingContainer.innerHTML = '<div class="spinner" style="margin-left: auto;"></div>';
     }
 
     const response = await fetch('/api/ssids');
