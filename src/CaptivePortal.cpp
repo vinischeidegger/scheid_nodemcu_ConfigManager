@@ -17,19 +17,35 @@ void CaptivePortal::setup(const String& apSSID, const String& mdnsHostname) {
     // are registered so handlers are active before the server begins.
 }
 
+void CaptivePortal::setupStationMode(const String& mdnsHostname) {
+    _dnsActive = false;
+    startMdns(mdnsHostname);
+    setupRoutes();
+}
+
 void CaptivePortal::handle() {
-    _dnsServer.processNextRequest();
+    if (_dnsActive) {
+        _dnsServer.processNextRequest();
+    }
+
+    MDNS.update();
 
     // Log when a client connects/disconnects to the soft-AP
-    int stationCount = WiFi.softAPgetStationNum();
-    if (stationCount != _lastStationCount) {
-        Serial.print("[CaptivePortal] soft-AP connected stations: ");
-        Serial.println(stationCount);
-        _lastStationCount = stationCount;
+    if (WiFi.getMode() & WIFI_AP) {
+        int stationCount = WiFi.softAPgetStationNum();
+        if (stationCount != _lastStationCount) {
+            Serial.print("[CaptivePortal] soft-AP connected stations: ");
+            Serial.println(stationCount);
+            _lastStationCount = stationCount;
+        }
     }
 }
 
 void CaptivePortal::setupRoutes() {
+    if (_routesConfigured) {
+        return;
+    }
+
     // Allows mDNS requests
     MDNS.addService("http", "tcp", 80);
 
@@ -63,6 +79,8 @@ void CaptivePortal::setupRoutes() {
         // For regular browser navigations, redirect to the portal root so mobile devices show captive portal UI.
         request->redirect("/");
     });
+
+    _routesConfigured = true;
 }
 
 AsyncWebServer& CaptivePortal::getServer() {
@@ -81,8 +99,13 @@ void CaptivePortal::startAP(const String& apSSID, const String& mdnsHostname) {
 
     // Configures DNS to redirect ALL traffic to the NodeMCU IP (Captive Portal)
     _dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+    _dnsActive = true;
 
     // Starts mDNS for access via friendly hostname (e.g., http://configmanager.local)
+    startMdns(mdnsHostname);
+}
+
+void CaptivePortal::startMdns(const String& mdnsHostname) {
     if (!MDNS.begin(mdnsHostname.c_str())) {
         Serial.println("[CaptivePortal] Error starting mDNS");
     } else {

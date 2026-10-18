@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PlatformIO: Build Homelab",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "/srv/platformio/compose.yaml",
+        "run",
+        "--rm",
+        "--no-deps",
+        "platformio",
+        "run",
+        "-d",
+        "/workspace/scheid_nodemcu_ConfigManager/examples/BasicSetup"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "PlatformIO: Upload Homelab",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "/srv/platformio/compose.yaml",
+        "run",
+        "--rm",
+        "--no-deps",
+        "platformio",
+        "run",
+        "-d",
+        "/workspace/scheid_nodemcu_ConfigManager/examples/BasicSetup",
+        "-t",
+        "upload",
+        "--upload-port",
+        "/dev/nodemcu"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "PlatformIO: Monitor Homelab",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "/srv/platformio/compose.yaml",
+        "run",
+        "--rm",
+        "--no-deps",
+        "platformio",
+        "device",
+        "monitor",
+        "--port",
+        "/dev/nodemcu",
+        "--baud",
+        "115200"
+      ],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

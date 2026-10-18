@@ -38,6 +38,18 @@ MOCK_ABOUT = {
     "version": "1.0.1"
 }
 
+
+def build_config_payload():
+    """Return the mock configuration payload used by the web UI."""
+    return {
+        "page_title": MOCK_ABOUT["page_title"],
+        "mdns_hostname": "scheid-config",
+        "wifi_mode": "AP",
+        "ap_ssid": "ConfigManager-Setup",
+        "wifi_ssid": "",
+        "parameters": []
+    }
+
 MOCK_SSIDS = {
     "ssids": [
         {
@@ -102,6 +114,12 @@ def get_about():
     """Mock: GET /api/about - Returns info about device and firmwares"""
     return jsonify(MOCK_ABOUT)
 
+
+@app.route('/api/config')
+def get_config():
+    """Mock: GET /api/config - Returns device configuration for the web UI."""
+    return jsonify(build_config_payload())
+
 @app.route('/api/ssids')
 def get_ssids():
     """Mock: GET /api/ssids - Returns available WiFi networks"""
@@ -113,12 +131,13 @@ def get_ssids():
 @app.route('/api/connect', methods=['POST'])
 def connect_ssid():
     """Mock: POST /api/connect - Simulates a WiFi connection attempt."""
-    if not request.is_json:
-        return jsonify({"success": False, "error": "Request payload must be JSON."}), 400
-
-    payload = request.get_json()
-    ssid = payload.get('ssid')
-    password = payload.get('password', '')
+    if request.is_json:
+        payload = request.get_json() or {}
+        ssid = payload.get('ssid')
+        password = payload.get('password', '')
+    else:
+        ssid = request.form.get('ssid')
+        password = request.form.get('password', '')
 
     if not ssid:
         return jsonify({"success": False, "error": "SSID is required."}), 400
@@ -139,8 +158,8 @@ def connect_ssid():
 
 @app.route('/api/status')
 def get_status():
-    """Mock: GET /api/status - Returns device status as HTML"""
-    return MOCK_STATUS, 200, {'Content-Type': 'text/html'}
+    """Mock: GET /api/status - Returns device status as JSON rows."""
+    return jsonify(MOCK_STATUS)
 
 # ============================================================================
 # Main
@@ -158,7 +177,8 @@ if __name__ == '__main__':
     print(f"Starting server at http://localhost:5000")
     print(f"Web UI: http://localhost:5000/")
     print(f"API Endpoints:")
-    print(f"  - GET http://localhost:5000/api/about  (device config)")
+    print(f"  - GET http://localhost:5000/api/config  (device configuration)")
+    print(f"  - GET http://localhost:5000/api/about   (device info)")
     print(f"  - GET http://localhost:5000/api/ssids   (WiFi networks)")
     print(f"  - GET http://localhost:5000/api/status  (device status)")
     print("=" * 70)

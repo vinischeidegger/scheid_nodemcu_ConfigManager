@@ -1,5 +1,6 @@
 let currentConfig = null;
 let ssidRefreshTimer = null;
+let wifiConnectionInProgress = false;
 
 /**
  * Load device configuration from the mock API and update the page title.
@@ -143,16 +144,18 @@ function setPasswordDialogError(message) {
 }
 
 async function attemptConnect(ssid, password = '') {
+  wifiConnectionInProgress = true;
+  stopWifiRefresh();
   clearWifiMessage();
-  showWifiMessage(`Connecting to ${ssid}...`, 'info');
+  showWifiMessage(`Connecting to ${ssid}... The device may restart and the WiFi list will stop updating.`, 'info');
 
   try {
     const response = await fetch('/api/connect', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       },
-      body: JSON.stringify({ ssid, password })
+      body: new URLSearchParams({ ssid, password })
     });
 
     const result = await response.json();
@@ -160,8 +163,12 @@ async function attemptConnect(ssid, password = '') {
       throw new Error(result.error || 'Failed to connect');
     }
 
-    showWifiMessage(result.message || `Connected to ${ssid}.`, 'info');
+    showWifiMessage(result.message || `Connected to ${ssid}. Restarting...`, 'info');
   } catch (error) {
+    wifiConnectionInProgress = false;
+    if (isWifiSectionActive()) {
+      startWifiRefresh();
+    }
     showWifiMessage(error.message || 'Connection failed.', 'error');
   }
 }
@@ -202,6 +209,10 @@ function handleConnectAction() {
  * Preserves the currently selected SSID if it is still present after refresh.
  */
 async function loadWifiSsids() {
+  if (wifiConnectionInProgress) {
+    return;
+  }
+
   try {
     const listDiv = document.getElementById('ssid-list');
     if (!listDiv) {
@@ -289,6 +300,10 @@ async function loadWifiSsids() {
       loadingContainer.innerHTML = '';
     }
   } catch (err) {
+    if (wifiConnectionInProgress) {
+      return;
+    }
+
     console.error('Failed to fetch SSIDs', err);
     const listDiv = document.getElementById('ssid-list');
     if (listDiv) {
@@ -316,6 +331,10 @@ function stopWifiRefresh() {
  */
 function startWifiRefresh() {
   if (ssidRefreshTimer !== null) {
+    return;
+  }
+
+  if (wifiConnectionInProgress) {
     return;
   }
 

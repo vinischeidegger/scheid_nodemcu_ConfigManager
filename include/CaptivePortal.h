@@ -28,6 +28,12 @@ public:
     void setup(const String& apSSID, const String& mdnsHostname);
 
     /**
+     * @brief Sets up the web server and mDNS for normal STA mode access.
+     * @param mdnsHostname mDNS hostname for friendly access
+     */
+    void setupStationMode(const String& mdnsHostname);
+
+    /**
      * @brief Must be called in the main loop to handle requests.
      */
     void handle();
@@ -43,8 +49,11 @@ private:
     DNSServer _dnsServer;
     // Tracks connected station count to log connect/disconnect events
     int _lastStationCount = -1;
+    bool _dnsActive = false;
+    bool _routesConfigured = false;
 
     void setupRoutes();
+    void startMdns(const String& mdnsHostname);
     void startAP(const String& apSSID, const String& mdnsHostname);
 };
 

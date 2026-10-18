@@ -27,7 +27,12 @@ bool ConfigManager::begin() {
 
     // Use configured portal settings from options.
     // WiFi credentials still come from saved config or user input.
-    return _configService.begin(_options.apSSID, "", "", _options.mdnsHostname);
+    return _configService.begin(
+        _options.apSSID,
+        _configData.getWifiSsid(),
+        _configData.getWifiPassword(),
+        _options.mdnsHostname
+    );
 }
 
 void ConfigManager::handle() {
@@ -47,10 +52,12 @@ void ConfigManager::resetNetwork() {
 }
 
 void ConfigManager::setMdnsHostname(const String& hostname) {
+    _options.mdnsHostname = hostname;
     _configService.setMdnsHostname(hostname);
 }
 
 void ConfigManager::setPageTitle(const String& title) {
+    _options.pageTitle = title;
     _configService.setPageTitle(title);
 }
 

@@ -76,7 +76,7 @@ def sync_and_compress_assets(source, target, env):
             s = os.path.join(lib_data_src, item)
             d = os.path.join(target_sub_dir, item)
             if not os.path.isdir(s): # Only copy files
-                shutil.copy2(s, d)
+                shutil.copyfile(s, d)
 
     # 3. Optional JavaScript Inlining Phase
     # Inline external JavaScript files referenced via <script src="..."></script>

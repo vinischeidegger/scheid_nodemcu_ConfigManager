@@ -33,8 +33,15 @@ bool NetworkService::begin(const String& apSSID, const String& wifiSSID, const S
     }
 
     // 2. Attempts to connect to WiFi (config already loaded by ConfigManager)
-    if (_wifiSSID != "" && connectWiFi()) {
+    if (_wifiSSID != "" && connectToWiFi(_wifiSSID, _wifiPassword, false)) {
+        _captivePortal->setupStationMode(_mdnsHostname);
+        _restApi->setup();
+        _captivePortal->getServer().begin();
         Serial.println("[NetworkService] Connected to WiFi successfully!");
+        Serial.print("[NetworkService] STA SSID: ");
+        Serial.println(_wifiSSID);
+        Serial.print("[NetworkService] STA IP: ");
+        Serial.println(WiFi.localIP());
         return true;
     }
 
@@ -71,12 +78,50 @@ String NetworkService::getWifiSsid() const {
     return _wifiSSID;
 }
 
+String NetworkService::getWifiMode() const {
+    WiFiMode_t mode = WiFi.getMode();
+    if (mode == WIFI_STA) {
+        return "STA";
+    }
+    if (mode == WIFI_AP) {
+        return "AP";
+    }
+    if (mode == WIFI_AP_STA) {
+        return "AP_STA";
+    }
+    return "OFF";
+}
+
 String NetworkService::getPageTitle() const {
     return _pageTitle;
 }
 
 void NetworkService::setPageTitle(const String& title) {
     _pageTitle = title;
+}
+
+bool NetworkService::connectToWiFi(const String& wifiSSID, const String& wifiPassword, bool keepAccessPoint) {
+    _wifiSSID = wifiSSID;
+    _wifiPassword = wifiPassword;
+
+    WiFi.mode(keepAccessPoint ? WIFI_AP_STA : WIFI_STA);
+    WiFi.begin(_wifiSSID.c_str(), _wifiPassword.c_str());
+
+    int tentativas = 0;
+    while (WiFi.status() != WL_CONNECTED && tentativas < 20) { // Timeout of ~10 seconds
+        delay(500);
+        Serial.print(".");
+        tentativas++;
+    }
+    Serial.println();
+    return WiFi.status() == WL_CONNECTED;
+}
+
+bool NetworkService::saveWifiCredentials(const String& wifiSSID, const String& wifiPassword) {
+    _wifiSSID = wifiSSID;
+    _wifiPassword = wifiPassword;
+    _configData.setWifiCredentials(wifiSSID, wifiPassword);
+    return _configData.saveConfig();
 }
 
 const std::vector<ConfigParameter>& NetworkService::getParameters() const {
@@ -162,18 +207,4 @@ std::vector<WiFiScanResult> NetworkService::scanSsids() {
 
 bool NetworkService::isScanActive() const {
     return _scanInProgress;
-}
-
-bool NetworkService::connectWiFi() {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(_wifiSSID.c_str(), _wifiPassword.c_str());
-
-    int tentativas = 0;
-    while (WiFi.status() != WL_CONNECTED && tentativas < 20) { // Timeout of ~10 seconds
-        delay(500);
-        Serial.print(".");
-        tentativas++;
-    }
-    Serial.println();
-    return WiFi.status() == WL_CONNECTED;
 }

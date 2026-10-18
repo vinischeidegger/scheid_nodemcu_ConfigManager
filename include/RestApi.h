@@ -30,6 +30,7 @@ private:
     AsyncWebServer& _server;
 
     void setupConfigEndpoint();
+    void setupConnectEndpoint();
     void setupStatusEndpoint();
     void setupSaveEndpoint();
     void setupScanEndpoint();

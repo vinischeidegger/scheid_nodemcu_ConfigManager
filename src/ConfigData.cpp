@@ -1,6 +1,15 @@
 #include "ConfigData.h"
 #include <LittleFS.h>
 
+static bool ensureConfigFilesystemReady() {
+    if (LittleFS.begin()) {
+        return true;
+    }
+
+    Serial.println("[ConfigData] Failed to mount LittleFS.");
+    return false;
+}
+
 void ConfigData::registerParameter(const String& id, void* valuePointer, ParamType type, const String& label) {
     // Adds the product parameter to our internal list
     _parameters.push_back({id, valuePointer, type, label});
@@ -8,6 +17,10 @@ void ConfigData::registerParameter(const String& id, void* valuePointer, ParamTy
 
 bool ConfigData::saveConfig() {
     Serial.println("[ConfigData] Saving configuration...");
+
+    if (!ensureConfigFilesystemReady()) {
+        return false;
+    }
 
     // Using ArduinoJson v7 (dynamic and optimized JsonDocument)
     JsonDocument doc;
@@ -42,6 +55,9 @@ bool ConfigData::saveConfig() {
         }
     }
 
+    doc["wifi_ssid"] = _wifiSsid;
+    doc["wifi_password"] = _wifiPassword;
+
     // Opens the file and writes
     File file = LittleFS.open(_configPath, "w");
     if (!file) return false;
@@ -53,6 +69,10 @@ bool ConfigData::saveConfig() {
 
 bool ConfigData::loadConfig() {
     Serial.println("[ConfigData] Loading configuration...");
+
+    if (!ensureConfigFilesystemReady()) {
+        return false;
+    }
 
     File file = LittleFS.open(_configPath, "r");
     if (!file) return false; // File does not exist yet
@@ -95,7 +115,30 @@ bool ConfigData::loadConfig() {
             }
         }
     }
+
+    if (!doc["wifi_ssid"].isNull()) {
+        _wifiSsid = doc["wifi_ssid"].as<String>();
+    }
+    if (!doc["wifi_password"].isNull()) {
+        _wifiPassword = doc["wifi_password"].as<String>();
+    }
+
+    Serial.print("[ConfigData] Loaded WiFi SSID: ");
+    Serial.println(_wifiSsid.isEmpty() ? "<empty>" : _wifiSsid);
     return true;
+}
+
+void ConfigData::setWifiCredentials(const String& ssid, const String& password) {
+    _wifiSsid = ssid;
+    _wifiPassword = password;
+}
+
+String ConfigData::getWifiSsid() const {
+    return _wifiSsid;
+}
+
+String ConfigData::getWifiPassword() const {
+    return _wifiPassword;
 }
 
 const std::vector<ConfigParameter>& ConfigData::getParameters() const {

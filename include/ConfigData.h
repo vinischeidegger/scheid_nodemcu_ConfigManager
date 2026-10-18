@@ -47,12 +47,29 @@ public:
     bool loadConfig();
 
     /**
+     * @brief Stores WiFi credentials in memory so they can be persisted with the next save.
+     */
+    void setWifiCredentials(const String& ssid, const String& password);
+
+    /**
+     * @brief Returns the stored WiFi SSID, if any.
+     */
+    String getWifiSsid() const;
+
+    /**
+     * @brief Returns the stored WiFi password, if any.
+     */
+    String getWifiPassword() const;
+
+    /**
      * @brief Returns the registered configuration parameters.
      */
     const std::vector<ConfigParameter>& getParameters() const;
 
 private:
     std::vector<ConfigParameter> _parameters;
+    String _wifiSsid;
+    String _wifiPassword;
 
     // Path Constants
     const char* _configPath = "/config.json";

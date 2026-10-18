@@ -66,6 +66,11 @@ public:
     String getWifiSsid() const;
 
     /**
+     * @brief Returns the current runtime WiFi mode label.
+     */
+    String getWifiMode() const;
+
+    /**
      * @brief Returns the web portal page title.
      */
     String getPageTitle() const;
@@ -80,6 +85,19 @@ public:
      * @brief Returns the registered configuration parameters.
      */
     const std::vector<ConfigParameter>& getParameters() const;
+
+    /**
+     * @brief Tries to connect to the supplied WiFi credentials.
+     * @param wifiSSID WiFi network name
+     * @param wifiPassword WiFi password
+     * @param keepAccessPoint True to keep AP mode active during the attempt
+     */
+    bool connectToWiFi(const String& wifiSSID, const String& wifiPassword, bool keepAccessPoint = false);
+
+    /**
+     * @brief Persists the supplied WiFi credentials to LittleFS.
+     */
+    bool saveWifiCredentials(const String& wifiSSID, const String& wifiPassword);
 
     /**
      * @brief Performs a WiFi network scan and returns discovered networks.
@@ -110,7 +128,6 @@ private:
     bool _scanInProgress = false;
 
     // Private Methods
-    bool connectWiFi();
 };
 
 #endif // CORE_NETWORK_SERVICE_H
