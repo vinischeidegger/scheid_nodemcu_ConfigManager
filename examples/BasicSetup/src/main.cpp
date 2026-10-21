@@ -28,10 +28,10 @@ void setup() {
     // 3. PARAMETER REGISTRATION
     // ==========================================
     // Tell ConfigManager which variables it should manage and expose on the Captive Portal
-    configManager.registerParameter("pressure_sp", &pressureSetpoint, ParamType::FLOAT, "Setpoint (Bar)");
-    configManager.registerParameter("reading_time", &readingTimeMs, ParamType::INT, "Time between readings (ms)");
-    configManager.registerParameter("alarm", &isAlarmActive, ParamType::BOOL, "Enable Alarm");
-    configManager.registerParameter("name", &equipmentName, ParamType::STRING, "Equipment Name");
+    configManager.registerParameter("pressure_sp", pressureSetpoint, "Setpoint (Bar)");
+    configManager.registerParameter("reading_time", readingTimeMs, "Time between readings (ms)");
+    configManager.registerParameter("alarm", isAlarmActive, "Enable Alarm");
+    configManager.registerParameter("name", equipmentName, "Equipment Name");
 
     // Use ConfigManager for the page title and hostname.
     configManager.setMdnsHostname("pressure.config");

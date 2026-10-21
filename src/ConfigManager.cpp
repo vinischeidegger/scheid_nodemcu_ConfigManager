@@ -21,6 +21,34 @@ void ConfigManager::registerParameter(const String& id, void* valuePointer, Para
     _configData.registerParameter(id, valuePointer, type, label);
 }
 
+void ConfigManager::registerParameter(const String& id, int& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
+void ConfigManager::registerParameter(const String& id, uint32_t& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
+void ConfigManager::registerParameter(const String& id, unsigned long& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
+void ConfigManager::registerParameter(const String& id, float& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
+void ConfigManager::registerParameter(const String& id, double& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
+void ConfigManager::registerParameter(const String& id, bool& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
+void ConfigManager::registerParameter(const String& id, String& value, const String& label) {
+    _configData.registerParameter(id, value, label);
+}
+
 bool ConfigManager::begin() {
     // Load saved configuration first
     _configData.loadConfig();

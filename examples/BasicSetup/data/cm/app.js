@@ -18,6 +18,7 @@ async function loadConfig() {
       titleElement.textContent = data.page_title || titleElement.textContent;
     }
     document.title = data.page_title || document.title;
+    updateWifiSetupDetails(data);
     console.log('ConfigManager state loaded:', data);
     return data;
   } catch (error) {
@@ -33,6 +34,20 @@ function getWifiModeLabel(configData = currentConfig) {
   }
 
   return String(wifiModeValue).toUpperCase();
+}
+
+function updateWifiSetupDetails(configData = currentConfig) {
+  const modeElement = document.getElementById('wifi-mode-value');
+  const apSsidElement = document.getElementById('wifi-ap-ssid-value');
+  const staSsidElement = document.getElementById('wifi-sta-ssid-value');
+
+  if (!modeElement || !apSsidElement || !staSsidElement) {
+    return;
+  }
+
+  modeElement.textContent = getWifiModeLabel(configData);
+  apSsidElement.textContent = configData?.ap_ssid || 'Not available';
+  staSsidElement.textContent = configData?.wifi_ssid || 'Not configured';
 }
 
 /**

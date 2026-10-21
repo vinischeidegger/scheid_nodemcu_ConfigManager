@@ -164,9 +164,27 @@ void RestApi::setupConfigEndpoint() {
                     paramObj["value"] = *value;
                     break;
                 }
+                case ParamType::UINT32: {
+                    uint32_t* value = static_cast<uint32_t*>(param.valuePointer);
+                    paramObj["type"] = "uint32";
+                    paramObj["value"] = *value;
+                    break;
+                }
+                case ParamType::ULONG: {
+                    unsigned long* value = static_cast<unsigned long*>(param.valuePointer);
+                    paramObj["type"] = "ulong";
+                    paramObj["value"] = *value;
+                    break;
+                }
                 case ParamType::FLOAT: {
                     float* value = static_cast<float*>(param.valuePointer);
                     paramObj["type"] = "float";
+                    paramObj["value"] = *value;
+                    break;
+                }
+                case ParamType::DOUBLE: {
+                    double* value = static_cast<double*>(param.valuePointer);
+                    paramObj["type"] = "double";
                     paramObj["value"] = *value;
                     break;
                 }
