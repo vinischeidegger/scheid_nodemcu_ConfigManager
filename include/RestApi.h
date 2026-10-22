@@ -34,6 +34,7 @@ private:
     void setupStatusEndpoint();
     void setupSaveEndpoint();
     void setupScanEndpoint();
+    void setupReturnToApEndpoint();
 };
 
 #endif // CORE_REST_API_H

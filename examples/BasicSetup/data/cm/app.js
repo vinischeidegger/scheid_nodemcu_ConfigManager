@@ -188,6 +188,40 @@ async function attemptConnect(ssid, password = '') {
   }
 }
 
+async function returnToApMode() {
+  const shouldReturnToAp = window.confirm(
+    'This will clear saved WiFi credentials and restart the device in AP mode. Continue?'
+  );
+
+  if (!shouldReturnToAp) {
+    return;
+  }
+
+  wifiConnectionInProgress = true;
+  stopWifiRefresh();
+  clearWifiMessage();
+  showWifiMessage('Switching to AP mode... The device will restart shortly.', 'info');
+
+  try {
+    const response = await fetch('/api/return-to-ap', {
+      method: 'POST'
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to switch to AP mode.');
+    }
+
+    showWifiMessage(result.message || 'Returning to AP mode. Device restarting...', 'info');
+  } catch (error) {
+    wifiConnectionInProgress = false;
+    if (isWifiSectionActive()) {
+      startWifiRefresh();
+    }
+    showWifiMessage(error.message || 'Failed to switch to AP mode.', 'error');
+  }
+}
+
 function getSelectedSsidRow() {
   return document.querySelector('.ssid-row.selected');
 }
@@ -456,6 +490,11 @@ window.addEventListener('DOMContentLoaded', () => {
   const connectButton = document.getElementById('connectButton');
   if (connectButton) {
     connectButton.addEventListener('click', handleConnectAction);
+  }
+
+  const returnToApButton = document.getElementById('returnToApButton');
+  if (returnToApButton) {
+    returnToApButton.addEventListener('click', returnToApMode);
   }
 
   const cancelPassword = document.getElementById('cancelPassword');

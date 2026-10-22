@@ -124,6 +124,13 @@ bool NetworkService::saveWifiCredentials(const String& wifiSSID, const String& w
     return _configData.saveConfig();
 }
 
+bool NetworkService::clearWifiCredentials() {
+    _wifiSSID = "";
+    _wifiPassword = "";
+    _configData.setWifiCredentials("", "");
+    return _configData.saveConfig();
+}
+
 const std::vector<ConfigParameter>& NetworkService::getParameters() const {
     return _configData.getParameters();
 }

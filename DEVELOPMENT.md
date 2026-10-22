@@ -1,5 +1,54 @@
 # Local Development Setup
 
+## Remote Build and NodeMCU Update with Docker
+
+Use the helper scripts in `scripts/` to build and upload from a remote Docker PlatformIO environment.
+
+### Build Firmware Remotely
+
+```bash
+./scripts/pio_remote_build.sh
+```
+
+### Update NodeMCU (Firmware + Filesystem)
+
+```bash
+./scripts/pio_remote_update_nodemcu.sh
+```
+
+This now uploads both firmware and LittleFS files by default.
+
+### Firmware Only (Skip Filesystem)
+
+```bash
+./scripts/pio_remote_update_nodemcu.sh --firmware-only
+```
+
+### Monitor NodeMCU Serial Output
+
+```bash
+./scripts/pio_remote_monitor.sh
+```
+
+Use Ctrl+C to stop monitoring.
+
+### Runtime Overrides (Optional)
+
+You can override defaults through environment variables:
+
+```bash
+PIO_COMPOSE_FILE=/srv/platformio/compose.yaml \
+PIO_SERVICE=platformio \
+PIO_CONTAINER_ROOT=/workspace \
+PIO_EXAMPLE_PATH=examples/BasicSetup \
+PIO_ENV=nodemcuv2 \
+NODEMCU_PORT=/dev/nodemcu \
+MONITOR_BAUD=115200 \
+./scripts/pio_remote_update_nodemcu.sh
+```
+
+These scripts run the same Docker compose command shape used by the VS Code tasks, but in a reusable CLI form.
+
 ## Running the Mock API Server
 
 This mock server simulates the Arduino REST API endpoints for local testing of the web UI.

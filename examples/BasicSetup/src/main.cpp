@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 #include "ConfigManager.h"
 
 // ==========================================
@@ -33,8 +34,12 @@ void setup() {
     configManager.registerParameter("alarm", isAlarmActive, "Enable Alarm");
     configManager.registerParameter("name", equipmentName, "Equipment Name");
 
-    // Use ConfigManager for the page title and hostname.
-    configManager.setMdnsHostname("pressure.config");
+    // Keep mDNS hostname aligned with the ESP DHCP hostname used on the LAN.
+    String dhcpHostname = WiFi.hostname();
+    if (dhcpHostname.isEmpty()) {
+        dhcpHostname = "pressure-config";
+    }
+    configManager.setMdnsHostname(dhcpHostname);
     configManager.setPageTitle("Scheid Product Configuration");
 
     // ==========================================

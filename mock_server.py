@@ -156,6 +156,16 @@ def connect_ssid():
     time.sleep(1)
     return jsonify({"success": True, "message": f"Connected to {ssid}."}), 200
 
+
+@app.route('/api/return-to-ap', methods=['POST'])
+def return_to_ap_mode():
+    """Mock: POST /api/return-to-ap - Simulates clearing WiFi and restarting to AP."""
+    time.sleep(0.5)
+    return jsonify({
+        "success": True,
+        "message": "WiFi credentials cleared. Restarting in AP mode..."
+    }), 200
+
 @app.route('/api/status')
 def get_status():
     """Mock: GET /api/status - Returns device status as JSON rows."""

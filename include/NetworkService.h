@@ -100,6 +100,11 @@ public:
     bool saveWifiCredentials(const String& wifiSSID, const String& wifiPassword);
 
     /**
+     * @brief Clears stored WiFi credentials so next boot falls back to AP mode.
+     */
+    bool clearWifiCredentials();
+
+    /**
      * @brief Performs a WiFi network scan and returns discovered networks.
      * @note This function uses cached scan results and async scan to avoid
      *       blocking the WiFi server loop during long scans.

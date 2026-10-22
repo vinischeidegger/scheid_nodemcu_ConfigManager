@@ -136,6 +136,7 @@ void RestApi::setup() {
     setupStatusEndpoint();
     setupScanEndpoint();
     setupSaveEndpoint();
+    setupReturnToApEndpoint();
 
 }
 
@@ -337,5 +338,20 @@ void RestApi::setupScanEndpoint() {
         String responseBody;
         serializeJson(responseDoc, responseBody);
         request->send(200, "application/json", responseBody);
+    });
+}
+
+void RestApi::setupReturnToApEndpoint() {
+    _server.on("/api/return-to-ap", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        Serial.println("[RestApi] /api/return-to-ap requested");
+
+        if (!_networkService.clearWifiCredentials()) {
+            request->send(500, "application/json", "{\"success\":false,\"error\":\"Failed to clear WiFi credentials.\"}");
+            return;
+        }
+
+        request->send(200, "application/json", "{\"success\":true,\"message\":\"WiFi credentials cleared. Restarting in AP mode...\"}");
+        delay(1000);
+        ESP.restart();
     });
 }
