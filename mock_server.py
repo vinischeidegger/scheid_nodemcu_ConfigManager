@@ -23,6 +23,11 @@ try:
 except ImportError:
     LIVERELOAD_AVAILABLE = False
 
+if not FLASK_AVAILABLE:
+    print("ERROR: Flask is not installed")
+    print("Install with: python3 -m pip install flask flask-cors")
+    raise SystemExit(1)
+
 app = Flask(__name__, static_folder='web_src', static_url_path='')
 
 # Enable CORS for local testing
@@ -176,11 +181,6 @@ def get_status():
 # ============================================================================
 
 if __name__ == '__main__':
-    if not FLASK_AVAILABLE:
-        print("ERROR: Flask is not installed")
-        print("Install with: pip install flask flask-cors")
-        exit(1)
-    
     print("=" * 70)
     print("ConfigManager Mock API Server")
     print("=" * 70)
