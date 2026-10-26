@@ -2,6 +2,16 @@
 #include "RestApi.h"
 #include <ArduinoJson.h>
 
+static String getChipsetInfo() {
+#if defined(ESP8266)
+    return String("ESP8266 (Chip ID: 0x") + String(ESP.getChipId(), HEX) + ")";
+#elif defined(ESP32)
+    return String("ESP32");
+#else
+    return String("Unknown");
+#endif
+}
+
 static String decodeUrlEncodedValue(AsyncWebServerRequest *request, const String& value) {
     return request->urlDecode(value);
 }
@@ -286,6 +296,10 @@ void RestApi::setupStatusEndpoint() {
     _server.on("/api/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
         JsonDocument responseDoc;
         JsonArray items = responseDoc.to<JsonArray>();
+
+        JsonArray chipset = items.add<JsonArray>();
+        chipset.add("Chipset");
+        chipset.add(getChipsetInfo());
 
         JsonArray wifiSignal = items.add<JsonArray>();
         wifiSignal.add("WiFi Signal");
