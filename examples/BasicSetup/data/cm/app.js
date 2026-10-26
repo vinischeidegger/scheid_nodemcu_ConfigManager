@@ -121,6 +121,19 @@ function clearWifiMessage() {
   messageElement.className = 'wifi-message hidden';
 }
 
+function setPasswordVisibility(visible) {
+  const passwordInput = document.getElementById('ssid-password');
+  const toggleButton = document.getElementById('togglePasswordVisibility');
+  if (!passwordInput || !toggleButton) {
+    return;
+  }
+
+  passwordInput.type = visible ? 'text' : 'password';
+  toggleButton.textContent = visible ? 'Hide' : 'Show';
+  toggleButton.setAttribute('aria-pressed', visible ? 'true' : 'false');
+  toggleButton.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+}
+
 function openPasswordDialog(ssid) {
   const dialog = document.getElementById('password-dialog');
   const ssidLabel = document.getElementById('password-ssid');
@@ -133,6 +146,7 @@ function openPasswordDialog(ssid) {
 
   ssidLabel.textContent = ssid;
   passwordInput.value = '';
+  setPasswordVisibility(false);
   errorElement.textContent = '';
   errorElement.classList.add('hidden');
   dialog.classList.remove('hidden');
@@ -141,6 +155,7 @@ function openPasswordDialog(ssid) {
 
 function closePasswordDialog() {
   const dialog = document.getElementById('password-dialog');
+  setPasswordVisibility(false);
   if (!dialog) {
     return;
   }
@@ -500,6 +515,16 @@ window.addEventListener('DOMContentLoaded', () => {
   const cancelPassword = document.getElementById('cancelPassword');
   if (cancelPassword) {
     cancelPassword.addEventListener('click', closePasswordDialog);
+  }
+
+  const togglePasswordVisibility = document.getElementById('togglePasswordVisibility');
+  if (togglePasswordVisibility) {
+    togglePasswordVisibility.addEventListener('click', () => {
+      const passwordInput = document.getElementById('ssid-password');
+      const isVisible = passwordInput?.type === 'text';
+      setPasswordVisibility(!isVisible);
+      passwordInput?.focus();
+    });
   }
 
   const submitPassword = document.getElementById('submitPassword');
