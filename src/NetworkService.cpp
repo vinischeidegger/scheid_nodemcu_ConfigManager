@@ -131,6 +131,16 @@ bool NetworkService::clearWifiCredentials() {
     return _configData.saveConfig();
 }
 
+bool NetworkService::applyAndSaveConfig(const JsonVariantConst& flatValues) {
+    _configData.applyParameterValues(flatValues);
+
+    // Keep runtime WiFi fields aligned with values loaded into ConfigData.
+    _wifiSSID = _configData.getWifiSsid();
+    _wifiPassword = _configData.getWifiPassword();
+
+    return _configData.saveConfig();
+}
+
 const std::vector<ConfigParameter>& NetworkService::getParameters() const {
     return _configData.getParameters();
 }

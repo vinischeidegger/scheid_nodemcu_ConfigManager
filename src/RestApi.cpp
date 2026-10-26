@@ -311,12 +311,60 @@ void RestApi::setupStatusEndpoint() {
 }
 
 void RestApi::setupSaveEndpoint() {
-    _server.on("/api/save", HTTP_POST, [this](AsyncWebServerRequest *request) {
-        // Logic to get POST data, update _parameters and call saveConfig()
-        request->send(200, "text/html", "<h1>Saved! Restarting...</h1>");
-        delay(2000);
-        ESP.restart();
-    });
+    _server.on(
+        "/api/save",
+        HTTP_POST,
+        [this](AsyncWebServerRequest *request) {
+            String* rawBody = static_cast<String*>(request->_tempObject);
+            if (rawBody == nullptr || rawBody->isEmpty()) {
+                if (rawBody != nullptr) {
+                    delete rawBody;
+                    request->_tempObject = nullptr;
+                }
+                request->send(400, "application/json", "{\"success\":false,\"error\":\"Request body is required.\"}");
+                return;
+            }
+
+            JsonDocument payload;
+            DeserializationError error = deserializeJson(payload, *rawBody);
+
+            delete rawBody;
+            request->_tempObject = nullptr;
+
+            if (error) {
+                request->send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON payload.\"}");
+                return;
+            }
+
+            JsonVariantConst flatValues = payload["parameters"];
+            if (flatValues.isNull()) {
+                flatValues = payload.as<JsonVariantConst>();
+            }
+
+            if (!_networkService.applyAndSaveConfig(flatValues)) {
+                request->send(500, "application/json", "{\"success\":false,\"error\":\"Failed to save configuration.\"}");
+                return;
+            }
+
+            request->send(200, "application/json", "{\"success\":true,\"message\":\"Configuration saved successfully.\"}");
+        },
+        nullptr,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            String* rawBody = static_cast<String*>(request->_tempObject);
+            if (rawBody == nullptr) {
+                rawBody = new String();
+                request->_tempObject = rawBody;
+            }
+
+            if (index == 0) {
+                rawBody->reserve(total);
+            }
+
+            for (size_t i = 0; i < len; ++i) {
+                rawBody->concat(static_cast<char>(data[i]));
+            }
+        }
+    );
 }
 
 void RestApi::setupScanEndpoint() {

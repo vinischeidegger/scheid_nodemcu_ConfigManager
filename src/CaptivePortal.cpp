@@ -58,6 +58,12 @@ void CaptivePortal::setupRoutes() {
         request->send(response);
     });
 
+    // Compatibility route: the portal is served from "/", so relative
+    // references like "app.js" resolve to "/app.js" on clients.
+    _server.on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(LittleFS, "/cm/app.js", "application/javascript");
+    });
+
     _server.serveStatic("/cm", LittleFS, "/cm");
     _server.serveStatic("/images", LittleFS, "/images");
 

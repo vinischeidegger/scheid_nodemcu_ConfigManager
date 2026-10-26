@@ -87,6 +87,98 @@ static bool readDoubleParam(const JsonVariantConst& valueNode, double& outputVal
     return true;
 }
 
+static bool readBoolParam(const JsonVariantConst& valueNode, bool& outputValue) {
+    if (valueNode.is<bool>()) {
+        outputValue = valueNode.as<bool>();
+        return true;
+    }
+
+    if (valueNode.is<long long>()) {
+        outputValue = valueNode.as<long long>() != 0;
+        return true;
+    }
+
+    if (valueNode.is<unsigned long long>()) {
+        outputValue = valueNode.as<unsigned long long>() != 0;
+        return true;
+    }
+
+    return false;
+}
+
+static bool applyValueToParameter(const ConfigParameter& param, const JsonVariantConst& valueNode) {
+    if (!param.valuePointer || valueNode.isNull()) {
+        return false;
+    }
+
+    switch (param.type) {
+        case ParamType::INT: {
+            int* value = static_cast<int*>(param.valuePointer);
+            int32_t parsedValue = 0;
+            if (readInt32Param(valueNode, parsedValue)) {
+                *value = static_cast<int>(parsedValue);
+                return true;
+            }
+            return false;
+        }
+        case ParamType::UINT32: {
+            uint32_t* value = static_cast<uint32_t*>(param.valuePointer);
+            uint32_t parsedValue = 0;
+            if (readUInt32Param(valueNode, parsedValue)) {
+                *value = parsedValue;
+                return true;
+            }
+            return false;
+        }
+        case ParamType::ULONG: {
+            unsigned long* value = static_cast<unsigned long*>(param.valuePointer);
+            uint32_t parsedValue = 0;
+            if (readUInt32Param(valueNode, parsedValue)) {
+                *value = static_cast<unsigned long>(parsedValue);
+                return true;
+            }
+            return false;
+        }
+        case ParamType::FLOAT: {
+            float* value = static_cast<float*>(param.valuePointer);
+            float parsedValue = 0.0f;
+            if (readFloatParam(valueNode, parsedValue)) {
+                *value = parsedValue;
+                return true;
+            }
+            return false;
+        }
+        case ParamType::DOUBLE: {
+            double* value = static_cast<double*>(param.valuePointer);
+            double parsedValue = 0.0;
+            if (readDoubleParam(valueNode, parsedValue)) {
+                *value = parsedValue;
+                return true;
+            }
+            return false;
+        }
+        case ParamType::STRING: {
+            String* value = static_cast<String*>(param.valuePointer);
+            if (valueNode.is<const char*>()) {
+                *value = valueNode.as<String>();
+                return true;
+            }
+            return false;
+        }
+        case ParamType::BOOL: {
+            bool* value = static_cast<bool*>(param.valuePointer);
+            bool parsedValue = false;
+            if (readBoolParam(valueNode, parsedValue)) {
+                *value = parsedValue;
+                return true;
+            }
+            return false;
+        }
+    }
+
+    return false;
+}
+
 void ConfigData::registerParameter(const String& id, void* valuePointer, ParamType type, const String& label) {
     if (id.isEmpty()) {
         Serial.println("[ConfigData] Ignoring parameter registration with empty id.");
@@ -106,7 +198,6 @@ void ConfigData::registerParameter(const String& id, void* valuePointer, ParamTy
         return;
     }
 
-    // Adds the product parameter to our internal list
     _parameters.push_back({id, valuePointer, type, label});
 }
 
@@ -148,7 +239,7 @@ bool ConfigData::saveConfig() {
     // Using ArduinoJson v7 (dynamic and optimized JsonDocument)
     JsonDocument doc;
 
-    // Dynamically saves ALL parameters registered by products
+    // Persist using the legacy flat schema for maximum compatibility.
     for (const auto& param : _parameters) {
         if (!param.valuePointer) {
             continue;
@@ -224,77 +315,39 @@ bool ConfigData::loadConfig() {
         return false;
     }
 
-    // Dynamically updates variables in the product's main.cpp
+    // Dynamically updates variables registered by the application
     for (const auto& param : _parameters) {
-        if (!param.valuePointer || doc[param.id].isNull()) {
+        if (!param.valuePointer) {
             continue;
         }
 
         JsonVariantConst valueNode = doc[param.id];
-
-        switch (param.type) {
-            case ParamType::INT: {
-                int* value = static_cast<int*>(param.valuePointer);
-                int32_t parsedValue = 0;
-                if (readInt32Param(valueNode, parsedValue)) {
-                    *value = static_cast<int>(parsedValue);
-                }
-                break;
-            }
-            case ParamType::UINT32: {
-                uint32_t* value = static_cast<uint32_t*>(param.valuePointer);
-                uint32_t parsedValue = 0;
-                if (readUInt32Param(valueNode, parsedValue)) {
-                    *value = parsedValue;
-                }
-                break;
-            }
-            case ParamType::ULONG: {
-                unsigned long* value = static_cast<unsigned long*>(param.valuePointer);
-                uint32_t parsedValue = 0;
-                if (readUInt32Param(valueNode, parsedValue)) {
-                    *value = static_cast<unsigned long>(parsedValue);
-                }
-                break;
-            }
-            case ParamType::FLOAT: {
-                float* value = static_cast<float*>(param.valuePointer);
-                float parsedValue = 0.0f;
-                if (readFloatParam(valueNode, parsedValue)) {
-                    *value = parsedValue;
-                }
-                break;
-            }
-            case ParamType::DOUBLE: {
-                double* value = static_cast<double*>(param.valuePointer);
-                double parsedValue = 0.0;
-                if (readDoubleParam(valueNode, parsedValue)) {
-                    *value = parsedValue;
-                }
-                break;
-            }
-            case ParamType::STRING: {
-                String* value = static_cast<String*>(param.valuePointer);
-                if (valueNode.is<const char*>()) {
-                    *value = valueNode.as<String>();
-                }
-                break;
-            }
-            case ParamType::BOOL: {
-                bool* value = static_cast<bool*>(param.valuePointer);
-                if (valueNode.is<bool>()) {
-                    *value = valueNode.as<bool>();
-                }
-                break;
-            }
+        if (valueNode.isNull()) {
+            // Compatibility: accept scoped payloads if present.
+            valueNode = doc["common"][param.id];
         }
+        if (valueNode.isNull()) {
+            valueNode = doc["product"][param.id];
+        }
+
+        applyValueToParameter(param, valueNode);
     }
 
-    if (!doc["wifi_ssid"].isNull()) {
-        _wifiSsid = doc["wifi_ssid"].as<String>();
+    JsonVariantConst wifiSsidNode = doc["wifi_ssid"];
+    if (wifiSsidNode.isNull()) {
+        wifiSsidNode = doc["common"]["wifi_ssid"];
     }
-    if (!doc["wifi_password"].isNull()) {
-        _wifiPassword = doc["wifi_password"].as<String>();
+
+    JsonVariantConst wifiPasswordNode = doc["wifi_password"];
+    if (wifiPasswordNode.isNull()) {
+        wifiPasswordNode = doc["common"]["wifi_password"];
+    }
+
+    if (!wifiSsidNode.isNull()) {
+        _wifiSsid = wifiSsidNode.as<String>();
+    }
+    if (!wifiPasswordNode.isNull()) {
+        _wifiPassword = wifiPasswordNode.as<String>();
     }
 
     Serial.print("[ConfigData] Loaded WiFi SSID: ");
@@ -317,4 +370,30 @@ String ConfigData::getWifiPassword() const {
 
 const std::vector<ConfigParameter>& ConfigData::getParameters() const {
     return _parameters;
+}
+
+bool ConfigData::applyParameterValues(const JsonVariantConst& flatValues) {
+    bool updatedAnyParameter = false;
+
+    for (const auto& param : _parameters) {
+        JsonVariantConst valueNode = flatValues[param.id];
+
+        if (applyValueToParameter(param, valueNode)) {
+            updatedAnyParameter = true;
+        }
+    }
+
+    JsonVariantConst wifiSsidNode = flatValues["wifi_ssid"];
+    if (!wifiSsidNode.isNull() && wifiSsidNode.is<const char*>()) {
+        _wifiSsid = wifiSsidNode.as<String>();
+        updatedAnyParameter = true;
+    }
+
+    JsonVariantConst wifiPasswordNode = flatValues["wifi_password"];
+    if (!wifiPasswordNode.isNull() && wifiPasswordNode.is<const char*>()) {
+        _wifiPassword = wifiPasswordNode.as<String>();
+        updatedAnyParameter = true;
+    }
+
+    return updatedAnyParameter;
 }

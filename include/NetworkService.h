@@ -105,6 +105,11 @@ public:
     bool clearWifiCredentials();
 
     /**
+     * @brief Applies JSON parameter values and persists them to storage.
+     */
+    bool applyAndSaveConfig(const JsonVariantConst& flatValues);
+
+    /**
      * @brief Performs a WiFi network scan and returns discovered networks.
      * @note This function uses cached scan results and async scan to avoid
      *       blocking the WiFi server loop during long scans.

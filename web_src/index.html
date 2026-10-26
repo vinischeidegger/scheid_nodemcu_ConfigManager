@@ -252,6 +252,27 @@
         font-size: 1rem;
         box-sizing: border-box;
       }
+      .password-input-wrapper {
+        position: relative;
+      }
+      .password-input-wrapper input {
+        padding-right: 84px;
+      }
+      .password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        transform: translateY(-50%);
+        border: 1px solid #d1d1d1;
+        background: #f7f7f7;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+      .password-toggle:hover {
+        background: #ececec;
+      }
       fieldset {
         margin-bottom: 18px;
         border: 1px solid #ddd;
@@ -469,7 +490,18 @@
             <h2>WiFi Password Required</h2>
             <p>Enter the password for <strong id="password-ssid"></strong>.</p>
             <label for="ssid-password">Password</label>
-            <input id="ssid-password" type="password" autocomplete="current-password" />
+            <div class="password-input-wrapper">
+              <input id="ssid-password" type="password" autocomplete="current-password" />
+              <button
+                type="button"
+                class="password-toggle"
+                id="togglePasswordVisibility"
+                aria-label="Show password"
+                aria-pressed="false"
+              >
+                Show
+              </button>
+            </div>
             <div id="password-error" class="wifi-message error hidden"></div>
             <div class="dialog-footer">
               <button type="button" class="secondary" id="cancelPassword">Cancel</button>
@@ -563,6 +595,6 @@
         <p><strong>Library:</strong> ConfigManager by Scheid</p>
       </div>
     </div>
-    <script src="app.js"></script>
+    <script src="/cm/app.js"></script>
   </body>
 </html>

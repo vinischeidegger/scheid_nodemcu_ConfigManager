@@ -79,9 +79,8 @@ void setup() {
     Serial.begin(115200);
 
     // 3. Register your custom parameters so the Captive Portal knows about them
-    // (Key, Pointer to variable, Data Type)
-    configManager.registerParameter("pressure_sp", &pressureSetpoint, "float");
-    configManager.registerParameter("device_name", &deviceName, "string");
+    configManager.registerParameter("pressure_sp", pressureSetpoint, "Pressure Setpoint");
+    configManager.registerParameter("device_name", deviceName, "Device Name");
 
     // 4. Initialize the manager. 
     // It will attempt to load saved configs and connect to WiFi. 
@@ -94,6 +93,19 @@ void loop() {
     configManager.handle();
 
     // Your main product logic goes here...
+}
+```
+
+### JSON Contract
+
+Configurations are persisted using the legacy flat schema:
+
+```json
+{
+    "wifi_ssid": "MyNetwork",
+    "wifi_password": "********",
+    "pressure_sp": 15.5,
+    "device_name": "PressureSensor_01"
 }
 ```
 

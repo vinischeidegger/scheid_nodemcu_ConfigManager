@@ -81,6 +81,13 @@ public:
      */
     const std::vector<ConfigParameter>& getParameters() const;
 
+    /**
+        * @brief Applies values from a JSON map and updates registered parameters in RAM.
+        * @param flatValues JSON object with parameter values
+     * @return True if at least one parameter was successfully updated
+     */
+        bool applyParameterValues(const JsonVariantConst& flatValues);
+
 private:
     std::vector<ConfigParameter> _parameters;
     String _wifiSsid;
