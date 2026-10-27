@@ -384,7 +384,7 @@ void RestApi::setupSaveEndpoint() {
 void RestApi::setupScanEndpoint() {
     _server.on("/api/ssids", HTTP_GET, [this](AsyncWebServerRequest *request) {
         Serial.println("[RestApi] /api/ssids requested");
-        StaticJsonDocument<2048> responseDoc;
+        JsonDocument responseDoc;
         JsonArray ssidArray = responseDoc["ssids"].to<JsonArray>();
         for (const auto& result : _networkService.scanSsids()) {
             JsonObject item = ssidArray.add<JsonObject>();
