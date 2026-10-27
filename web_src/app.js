@@ -121,6 +121,26 @@ function clearWifiMessage() {
   messageElement.className = 'wifi-message hidden';
 }
 
+function getPasswordToggleIcon(visible) {
+  if (visible) {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 3l18 18"></path>
+        <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24"></path>
+        <path d="M9.9 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a20.8 20.8 0 0 1-4 4.8"></path>
+        <path d="M6.2 6.3C3.6 8 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.5 4.5-1.2"></path>
+      </svg>
+    `;
+  }
+
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  `;
+}
+
 function setPasswordVisibility(visible) {
   const passwordInput = document.getElementById('ssid-password');
   const toggleButton = document.getElementById('togglePasswordVisibility');
@@ -129,7 +149,7 @@ function setPasswordVisibility(visible) {
   }
 
   passwordInput.type = visible ? 'text' : 'password';
-  toggleButton.textContent = visible ? 'Hide' : 'Show';
+  toggleButton.innerHTML = getPasswordToggleIcon(visible);
   toggleButton.setAttribute('aria-pressed', visible ? 'true' : 'false');
   toggleButton.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
 }

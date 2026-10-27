@@ -109,6 +109,11 @@ def serve_index():
     """Serve the main index.html"""
     return send_from_directory('web_src', 'index.html')
 
+@app.route('/cm/<path:filename>')
+def serve_cm_static(filename):
+    """Serve static files under /cm to match the embedded device layout."""
+    return send_from_directory('web_src', filename)
+
 @app.route('/<path:filename>')
 def serve_static(filename):
     """Serve static files (CSS, JS, etc.)"""
