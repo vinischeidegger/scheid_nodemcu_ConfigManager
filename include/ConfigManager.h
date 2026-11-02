@@ -19,6 +19,8 @@ struct ConfigManagerOptions {
 
 class ConfigManager {
 public:
+    using StatusItemsCallback = NetworkService::StatusItemsCallback;
+
     /**
      * @brief Constructs a ConfigManager instance with named options.
      * @param options Configuration options for the manager
@@ -112,6 +114,11 @@ public:
      * @brief Returns the registered configuration parameters.
      */
     const std::vector<ConfigParameter>& getParameters() const;
+
+    /**
+     * @brief Registers a callback used to append custom rows to /api/status.
+     */
+    void setStatusItemsCallback(const StatusItemsCallback& callback);
 
 private:
     ConfigData _configData;

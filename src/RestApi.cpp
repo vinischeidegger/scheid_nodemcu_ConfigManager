@@ -317,6 +317,8 @@ void RestApi::setupStatusEndpoint() {
         ipAddress.add("IP Address");
         ipAddress.add(WiFi.localIP().toString());
 
+        _networkService.appendCustomStatusItems(items);
+
         String responseBody;
         serializeJson(responseDoc, responseBody);
         request->send(200, "application/json", responseBody);

@@ -108,3 +108,7 @@ String ConfigManager::getWifiSsid() const {
 const std::vector<ConfigParameter>& ConfigManager::getParameters() const {
     return _configData.getParameters();
 }
+
+void ConfigManager::setStatusItemsCallback(const StatusItemsCallback& callback) {
+    _configService.setStatusItemsCallback(callback);
+}

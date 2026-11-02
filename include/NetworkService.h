@@ -2,6 +2,7 @@
 #define CORE_NETWORK_SERVICE_H
 
 #include <Arduino.h>
+#include <functional>
 #include "ConfigData.h"
 
 #include "CaptivePortal.h"
@@ -18,6 +19,8 @@ struct WiFiScanResult {
 
 class NetworkService {
 public:
+    using StatusItemsCallback = std::function<void(JsonArray)>;
+
     /**
      * @brief Constructs a ConfigService instance.
      * @param configData Reference to the ConfigData instance
@@ -121,6 +124,16 @@ public:
      */
     bool isScanActive() const;
 
+    /**
+     * @brief Registers a callback used to append custom rows to /api/status.
+     */
+    void setStatusItemsCallback(const StatusItemsCallback& callback);
+
+    /**
+     * @brief Calls the status callback to append custom rows when configured.
+     */
+    void appendCustomStatusItems(JsonArray items) const;
+
 private:
     ConfigData& _configData;
     String _pageTitle = "Scheid Product Configuration";
@@ -136,6 +149,7 @@ private:
     std::vector<WiFiScanResult> _scanCache;
     unsigned long _lastScanTimestamp = 0;
     bool _scanInProgress = false;
+    StatusItemsCallback _statusItemsCallback;
 
     // Private Methods
 };

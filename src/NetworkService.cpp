@@ -225,3 +225,13 @@ std::vector<WiFiScanResult> NetworkService::scanSsids() {
 bool NetworkService::isScanActive() const {
     return _scanInProgress;
 }
+
+void NetworkService::setStatusItemsCallback(const StatusItemsCallback& callback) {
+    _statusItemsCallback = callback;
+}
+
+void NetworkService::appendCustomStatusItems(JsonArray items) const {
+    if (_statusItemsCallback) {
+        _statusItemsCallback(items);
+    }
+}
