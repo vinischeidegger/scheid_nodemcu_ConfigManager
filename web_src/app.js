@@ -459,7 +459,16 @@ async function fetchData() {
 
   try {
     const response = await fetch('/api/status');
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Status request failed (${response.status}): ${errorBody}`);
+    }
+
     const data = await response.json();
+    const statusRows = Array.isArray(data) ? data : [];
+    if (!Array.isArray(data)) {
+      console.warn('Status response is not an array. Rendering base status only.', data);
+    }
 
     let html = `
       <h2>Current Status</h2>
@@ -474,7 +483,7 @@ async function fetchData() {
         </tr>
     `;
 
-    data.forEach(([parameter, value]) => {
+    statusRows.forEach(([parameter, value]) => {
       html += `
         <tr>
           <td style="padding: 10px; border: 1px solid #ccc;">${parameter}</td>
@@ -487,7 +496,7 @@ async function fetchData() {
     mainContent.innerHTML = html;
   } catch (error) {
     console.error('Error fetching data:', error);
-    mainContent.innerHTML = '<p>Error loading data.</p>';
+    mainContent.innerHTML = `<p>Error loading data: ${error.message || 'Unknown error'}.</p>`;
   }
 }
 

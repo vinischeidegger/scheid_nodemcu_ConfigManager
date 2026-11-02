@@ -294,30 +294,50 @@ void RestApi::setupConnectEndpoint() {
 
 void RestApi::setupStatusEndpoint() {
     _server.on("/api/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        Serial.println("[RestApi] /api/status requested");
+        auto appendBaseStatusItems = [this](JsonArray targetItems) {
+            JsonArray chipset = targetItems.add<JsonArray>();
+            chipset.add("Chipset");
+            chipset.add(getChipsetInfo());
+
+            JsonArray wifiSignal = targetItems.add<JsonArray>();
+            wifiSignal.add("WiFi Signal");
+            wifiSignal.add(String(WiFi.RSSI()) + " dBm");
+
+            JsonArray uptime = targetItems.add<JsonArray>();
+            uptime.add("Uptime");
+            uptime.add(String(millis() / 1000) + " seconds");
+
+            JsonArray hostname = targetItems.add<JsonArray>();
+            hostname.add("Hostname");
+            hostname.add(_networkService.getMdnsHostname() + ".local");
+
+            JsonArray ipAddress = targetItems.add<JsonArray>();
+            ipAddress.add("IP Address");
+            ipAddress.add(WiFi.localIP().toString());
+        };
+
         JsonDocument responseDoc;
         JsonArray items = responseDoc.to<JsonArray>();
-
-        JsonArray chipset = items.add<JsonArray>();
-        chipset.add("Chipset");
-        chipset.add(getChipsetInfo());
-
-        JsonArray wifiSignal = items.add<JsonArray>();
-        wifiSignal.add("WiFi Signal");
-        wifiSignal.add(String(WiFi.RSSI()) + " dBm");
-
-        JsonArray uptime = items.add<JsonArray>();
-        uptime.add("Uptime");
-        uptime.add(String(millis() / 1000) + " seconds");
-
-        JsonArray hostname = items.add<JsonArray>();
-        hostname.add("Hostname");
-        hostname.add(_networkService.getMdnsHostname() + ".local");
-
-        JsonArray ipAddress = items.add<JsonArray>();
-        ipAddress.add("IP Address");
-        ipAddress.add(WiFi.localIP().toString());
+        appendBaseStatusItems(items);
 
         _networkService.appendCustomStatusItems(items);
+
+        if (responseDoc.overflowed()) {
+            Serial.println("[RestApi] /api/status overflow after custom items. Returning base status only.");
+            responseDoc.clear();
+            items = responseDoc.to<JsonArray>();
+            appendBaseStatusItems(items);
+
+            JsonArray customStatus = items.add<JsonArray>();
+            customStatus.add("Custom Status");
+            customStatus.add("Unavailable");
+        }
+
+        if (responseDoc.overflowed()) {
+            request->send(500, "application/json", "{\"success\":false,\"error\":\"Status payload overflow.\"}");
+            return;
+        }
 
         String responseBody;
         serializeJson(responseDoc, responseBody);
