@@ -652,6 +652,11 @@
     <div id="mqtt" class="page">
       <h1>MQTT Settings</h1>
       <form id="mqttForm">
+        <label for="mqttEnabled">
+          <input type="checkbox" id="mqttEnabled" name="mqttEnabled" />
+          Enable MQTT
+        </label><br /><br />
+
         <label for="mqttServer">MQTT Server:</label>
         <input type="text" id="mqttServer" name="mqttServer" value="mqtt.example.com" /><br /><br />
 
@@ -666,6 +671,11 @@
 
         <label for="mqttTopic">Base Topic:</label>
         <input type="text" id="mqttTopic" name="mqttTopic" value="home/sensor/temperature" /><br /><br />
+
+        <label for="mqttPublishInterval">Publish Interval (ms):</label>
+        <input type="number" id="mqttPublishInterval" name="mqttPublishInterval" value="2000" min="500" /><br /><br />
+
+        <div id="mqtt-message" class="wifi-message info hidden"></div>
 
         <button type="submit">Save MQTT Settings</button>
       </form>

@@ -55,16 +55,22 @@ void CaptivePortal::setupRoutes() {
     _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/cm/index.html.gz", "text/html");
         response->addHeader("Content-Encoding", "gzip");
+        response->addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response->addHeader("Pragma", "no-cache");
         request->send(response);
     });
 
     // Compatibility route: the portal is served from "/", so relative
     // references like "app.js" resolve to "/app.js" on clients.
     _server.on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(LittleFS, "/cm/app.js", "application/javascript");
+        AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/cm/app.js", "application/javascript");
+        response->addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response->addHeader("Pragma", "no-cache");
+        request->send(response);
     });
 
-    _server.serveStatic("/cm", LittleFS, "/cm");
+    AsyncStaticWebHandler& cmHandler = _server.serveStatic("/cm", LittleFS, "/cm");
+    cmHandler.setCacheControl("no-store, no-cache, must-revalidate, max-age=0");
     _server.serveStatic("/images", LittleFS, "/images");
 
     // Catch-all route to force Captive Portal on mobile devices

@@ -135,6 +135,10 @@ RestApi::RestApi(NetworkService& configService, AsyncWebServer& server)
 }
 
 void RestApi::setup() {
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
     // Simple ping endpoint to verify API reachability from clients
     _server.on("/api/ping", HTTP_GET, [this](AsyncWebServerRequest *request) {
         Serial.println("[RestApi] /api/ping requested");
@@ -314,7 +318,15 @@ void RestApi::setupStatusEndpoint() {
 
             JsonArray ipAddress = targetItems.add<JsonArray>();
             ipAddress.add("IP Address");
-            ipAddress.add(WiFi.localIP().toString());
+
+            IPAddress runtimeIp = WiFi.localIP();
+            bool ipUnset = runtimeIp[0] == 0 && runtimeIp[1] == 0 && runtimeIp[2] == 0 && runtimeIp[3] == 0;
+            if (ipUnset) {
+                runtimeIp = WiFi.softAPIP();
+                ipUnset = runtimeIp[0] == 0 && runtimeIp[1] == 0 && runtimeIp[2] == 0 && runtimeIp[3] == 0;
+            }
+
+            ipAddress.add(ipUnset ? "Unavailable" : runtimeIp.toString());
         };
 
         JsonDocument responseDoc;

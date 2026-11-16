@@ -2,12 +2,100 @@ let currentConfig = null;
 let ssidRefreshTimer = null;
 let wifiConnectionInProgress = false;
 
+const NETWORK_DEFAULTS = Object.freeze({
+  // ESP8266/ESP32 SoftAP default gateway; override via window.__CM_API_AP_ORIGIN__ when needed.
+  apOrigin: 'http://192.168.4.1'
+});
+
+function normalizeOrigin(origin) {
+  return String(origin || '').trim().replace(/\/$/, '');
+}
+
+function getApiBootstrapConfig() {
+  const query = new URLSearchParams(window.location.search || '');
+  const queryOrigin = query.get('api_origin');
+  const windowOrigin = window.location?.origin;
+  const overrideOrigin = window.__CM_API_ORIGIN__;
+  const apOriginOverride = window.__CM_API_AP_ORIGIN__;
+
+  return {
+    preferredOrigin: normalizeOrigin(queryOrigin || overrideOrigin || windowOrigin),
+    apFallbackOrigin: normalizeOrigin(apOriginOverride || NETWORK_DEFAULTS.apOrigin)
+  };
+}
+
+function getApiBaseCandidates() {
+  const { preferredOrigin, apFallbackOrigin } = getApiBootstrapConfig();
+  return [...new Set([preferredOrigin, apFallbackOrigin].filter(Boolean))];
+}
+
+async function apiFetch(path, options = {}) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const bases = getApiBaseCandidates();
+  let lastError = null;
+
+  for (const base of bases) {
+    try {
+      return await fetch(`${base}${normalizedPath}`, options);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('Failed to reach API');
+}
+
+function getParameterValueMap(configData = currentConfig) {
+  const map = {};
+  const parameters = configData?.parameters;
+  if (!Array.isArray(parameters)) {
+    return map;
+  }
+
+  parameters.forEach(param => {
+    if (param && typeof param.id === 'string') {
+      map[param.id] = param.value;
+    }
+  });
+  return map;
+}
+
+function showMqttMessage(message, type = 'info') {
+  const messageElement = document.getElementById('mqtt-message');
+  if (!messageElement) {
+    return;
+  }
+
+  messageElement.textContent = message;
+  messageElement.className = `wifi-message ${type}`;
+  messageElement.classList.remove('hidden');
+}
+
+function populateMqttForm(configData = currentConfig) {
+  const params = getParameterValueMap(configData);
+  const mqttEnabled = document.getElementById('mqttEnabled');
+  const mqttServer = document.getElementById('mqttServer');
+  const mqttPort = document.getElementById('mqttPort');
+  const mqttUser = document.getElementById('mqttUser');
+  const mqttPassword = document.getElementById('mqttPassword');
+  const mqttTopic = document.getElementById('mqttTopic');
+  const mqttPublishInterval = document.getElementById('mqttPublishInterval');
+
+  if (mqttEnabled) mqttEnabled.checked = Boolean(params.mqtt_enabled);
+  if (mqttServer && typeof params.mqtt_server === 'string') mqttServer.value = params.mqtt_server;
+  if (mqttPort && params.mqtt_port !== undefined) mqttPort.value = params.mqtt_port;
+  if (mqttUser && typeof params.mqtt_username === 'string') mqttUser.value = params.mqtt_username;
+  if (mqttPassword && typeof params.mqtt_password === 'string') mqttPassword.value = params.mqtt_password;
+  if (mqttTopic && typeof params.mqtt_base_topic === 'string') mqttTopic.value = params.mqtt_base_topic;
+  if (mqttPublishInterval && params.mqtt_publish_interval_ms !== undefined) mqttPublishInterval.value = params.mqtt_publish_interval_ms;
+}
+
 /**
  * Load device configuration from the mock API and update the page title.
  */
 async function loadConfig() {
   try {
-    const response = await fetch('/api/config');
+    const response = await apiFetch('/api/config');
     if (!response.ok) {
       throw new Error('Failed to load config');
     }
@@ -19,6 +107,7 @@ async function loadConfig() {
     }
     document.title = data.page_title || document.title;
     updateWifiSetupDetails(data);
+    populateMqttForm(data);
     console.log('ConfigManager state loaded:', data);
     return data;
   } catch (error) {
@@ -200,7 +289,7 @@ async function attemptConnect(ssid, password = '') {
   showWifiMessage(`Connecting to ${ssid}... The device may restart and the WiFi list will stop updating.`, 'info');
 
   try {
-    const response = await fetch('/api/connect', {
+    const response = await apiFetch('/api/connect', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
@@ -238,7 +327,7 @@ async function returnToApMode() {
   showWifiMessage('Switching to AP mode... The device will restart shortly.', 'info');
 
   try {
-    const response = await fetch('/api/return-to-ap', {
+    const response = await apiFetch('/api/return-to-ap', {
       method: 'POST'
     });
     const result = await response.json();
@@ -311,7 +400,7 @@ async function loadWifiSsids() {
       loadingContainer.innerHTML = '<div class="spinner" style="margin-left: auto;"></div>';
     }
 
-    const response = await fetch('/api/ssids');
+    const response = await apiFetch('/api/ssids');
     const data = await response.json();
     let ssids = data.ssids;
 
@@ -458,7 +547,7 @@ async function fetchData() {
   const wifiMode = getWifiModeLabel(config);
 
   try {
-    const response = await fetch('/api/status');
+    const response = await apiFetch('/api/status');
     if (!response.ok) {
       const errorBody = await response.text();
       throw new Error(`Status request failed (${response.status}): ${errorBody}`);
@@ -496,7 +585,11 @@ async function fetchData() {
     mainContent.innerHTML = html;
   } catch (error) {
     console.error('Error fetching data:', error);
-    mainContent.innerHTML = `<p>Error loading data: ${error.message || 'Unknown error'}.</p>`;
+    const message = error?.message || 'Unknown error';
+    mainContent.innerHTML = `
+      <p>Error loading data: ${message}.</p>
+      <p>Connection tip: ensure this device is on the NodeMCU AP and try <a href="http://192.168.4.1/">http://192.168.4.1/</a>.</p>
+    `;
   }
 }
 
@@ -513,6 +606,57 @@ function toggleMobileMenu() {
     menu.className += ' responsive';
   } else {
     menu.className = 'topnav';
+  }
+}
+
+async function saveMqttSettings(event) {
+  event.preventDefault();
+
+  const mqttEnabled = document.getElementById('mqttEnabled')?.checked || false;
+  const mqttServer = document.getElementById('mqttServer')?.value?.trim() || '';
+  const mqttPort = Number(document.getElementById('mqttPort')?.value || 1883);
+  const mqttUser = document.getElementById('mqttUser')?.value?.trim() || '';
+  const mqttPassword = document.getElementById('mqttPassword')?.value || '';
+  const mqttTopic = document.getElementById('mqttTopic')?.value?.trim() || '';
+  const mqttPublishInterval = Number(document.getElementById('mqttPublishInterval')?.value || 2000);
+
+  const payload = {
+    parameters: {
+      mqtt_enabled: mqttEnabled,
+      mqtt_server: mqttServer,
+      mqtt_port: Number.isFinite(mqttPort) ? Math.max(1, Math.floor(mqttPort)) : 1883,
+      mqtt_username: mqttUser,
+      mqtt_password: mqttPassword,
+      mqtt_base_topic: mqttTopic,
+      mqtt_publish_interval_ms: Number.isFinite(mqttPublishInterval) ? Math.max(500, Math.floor(mqttPublishInterval)) : 2000
+    }
+  };
+
+  try {
+    const response = await apiFetch('/api/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    let result = {};
+    try {
+      result = await response.json();
+    } catch {
+      result = {};
+    }
+
+    if (!response.ok || result.success === false) {
+      throw new Error(result.error || `Save failed (${response.status})`);
+    }
+
+    showMqttMessage('MQTT settings saved successfully.', 'info');
+    await loadConfig();
+    await fetchData();
+  } catch (error) {
+    showMqttMessage(error.message || 'Failed to save MQTT settings.', 'error');
   }
 }
 
@@ -575,5 +719,10 @@ window.addEventListener('DOMContentLoaded', () => {
       closePasswordDialog();
       attemptConnect(network.ssid, password);
     });
+  }
+
+  const mqttForm = document.getElementById('mqttForm');
+  if (mqttForm) {
+    mqttForm.addEventListener('submit', saveMqttSettings);
   }
 });
