@@ -33,11 +33,15 @@ bool NetworkService::begin(const String& apSSID, const String& wifiSSID, const S
     }
 
     // 2. Attempts to connect to WiFi (config already loaded by ConfigManager)
-    if (_wifiSSID != "" && connectToWiFi(_wifiSSID, _wifiPassword, false)) {
-        _captivePortal->setupStationMode(_mdnsHostname);
+    if (_wifiSSID != "" && connectToWiFi(_wifiSSID, _wifiPassword, true)) {
+        _captivePortal->setup(_apSSID, _mdnsHostname);
         _restApi->setup();
         _captivePortal->getServer().begin();
-        Serial.println("[NetworkService] Connected to WiFi successfully!");
+        Serial.println("[NetworkService] Connected to WiFi successfully in AP+STA mode.");
+        Serial.print("[NetworkService] AP SSID: ");
+        Serial.println(_apSSID);
+        Serial.print("[NetworkService] AP IP: ");
+        Serial.println(WiFi.softAPIP());
         Serial.print("[NetworkService] STA SSID: ");
         Serial.println(_wifiSSID);
         Serial.print("[NetworkService] STA IP: ");

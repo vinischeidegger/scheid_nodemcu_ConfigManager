@@ -100,7 +100,8 @@ AsyncWebServer& CaptivePortal::getServer() {
 }
 
 void CaptivePortal::startAP(const String& apSSID, const String& mdnsHostname) {
-    WiFi.mode(WIFI_AP);
+    const bool staConnected = WiFi.status() == WL_CONNECTED;
+    WiFi.mode(staConnected ? WIFI_AP_STA : WIFI_AP);
     WiFi.softAP(apSSID.c_str(), ""); // Open network for captive portal
 
     // Log AP details so testers know which SSID/IP to connect to
