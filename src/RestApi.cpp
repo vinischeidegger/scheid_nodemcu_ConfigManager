@@ -306,7 +306,14 @@ void RestApi::setupStatusEndpoint() {
 
             JsonArray wifiSignal = targetItems.add<JsonArray>();
             wifiSignal.add("WiFi Signal");
-            wifiSignal.add(String(WiFi.RSSI()) + " dBm");
+
+            const WiFiMode_t mode = WiFi.getMode();
+            const bool staConnected = (mode & WIFI_STA) && (WiFi.status() == WL_CONNECTED);
+            if (staConnected) {
+                wifiSignal.add(String(WiFi.RSSI()) + " dBm");
+            } else {
+                wifiSignal.add("Unavailable");
+            }
 
             JsonArray uptime = targetItems.add<JsonArray>();
             uptime.add("Uptime");
@@ -319,13 +326,14 @@ void RestApi::setupStatusEndpoint() {
             JsonArray ipAddress = targetItems.add<JsonArray>();
             ipAddress.add("IP Address");
 
-            IPAddress runtimeIp = WiFi.localIP();
-            bool ipUnset = runtimeIp[0] == 0 && runtimeIp[1] == 0 && runtimeIp[2] == 0 && runtimeIp[3] == 0;
-            if (ipUnset) {
+            IPAddress runtimeIp;
+            if (staConnected) {
+                runtimeIp = WiFi.localIP();
+            } else {
                 runtimeIp = WiFi.softAPIP();
-                ipUnset = runtimeIp[0] == 0 && runtimeIp[1] == 0 && runtimeIp[2] == 0 && runtimeIp[3] == 0;
             }
 
+            const bool ipUnset = runtimeIp[0] == 0 && runtimeIp[1] == 0 && runtimeIp[2] == 0 && runtimeIp[3] == 0;
             ipAddress.add(ipUnset ? "Unavailable" : runtimeIp.toString());
         };
 
